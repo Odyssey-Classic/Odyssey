@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 )
@@ -28,6 +27,7 @@ func (s *OAuthServer) oAuthCallback(w http.ResponseWriter, r *http.Request) {
 	tok, err := cfg.Exchange(ctx, code)
 	if err != nil {
 		slog.Error("failed exchange", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -35,7 +35,9 @@ func (s *OAuthServer) oAuthCallback(w http.ResponseWriter, r *http.Request) {
 	client := cfg.Client(ctx, tok)
 	res, err := client.Get("https://discord.com/api/users/@me")
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to get user", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	msg, _ := io.ReadAll(res.Body)
 	var user DiscordIdentity
@@ -48,6 +50,7 @@ func (s *OAuthServer) oAuthCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("failed to get jwt", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	w.Write([]byte(jwtToken))
