@@ -1,7 +1,6 @@
 package oauth
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -18,7 +17,6 @@ func (s *OAuthServer) Run() {
 
 	// TODO: save verifier to use it in callback
 	url := s.Config.AuthCodeURL("state") //, oauth2.S256ChallengeOption(verifier))
-	fmt.Printf("auth: %v\n", "http://local.fosteredgames.com:8080/login")
 
 	http.HandleFunc("/oauth/callback", s.oAuthCallback)
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
