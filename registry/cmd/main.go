@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"log"
+	"os"
+	"os/signal"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/identity"
 	"golang.org/x/oauth2"
@@ -12,12 +16,12 @@ import (
 func main() {
 	cfg, err := ConfigFromEnv()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	oauthConf := &oauth2.Config{
@@ -32,8 +36,12 @@ func main() {
 	}
 
 	identity := identity.New(key, oauthConf)
-	go identity.Run()
 
-	for {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	go identity.Run(ctx)
+
+	select {
+	case <-ctx.Done():
+		stop()
 	}
 }

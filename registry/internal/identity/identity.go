@@ -1,6 +1,7 @@
 package identity
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
 
@@ -25,7 +26,7 @@ func New(privateKey *ecdsa.PrivateKey, oAuth *oauth2.Config) *IdentityServer {
 	}
 }
 
-func (s *IdentityServer) Run() {
+func (s *IdentityServer) Run(ctx context.Context) {
 	oAuthServer := &oauth.OAuthServer{
 		Config:           s.oAuth,
 		IdentityCallback: s.IdentityCallback,
@@ -47,11 +48,6 @@ func (s *IdentityServer) IdentityCallback(id string) (string, error) {
 	}
 
 	fmt.Printf("jwt %s\n", s.users[id])
-	validToken, err := s.VerifyJWT(s.users[id])
-	if err != nil {
-		fmt.Printf("failed to verify jwt: %v\n", err)
-	}
-	fmt.Printf("verified jwt: %v\n", validToken)
 
 	return s.users[id], nil
 }
