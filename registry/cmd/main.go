@@ -1,12 +1,21 @@
 package main
 
 import (
-	"github.com/FosteredGames/Odyssey/registry/internal/oauth"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+
+	"github.com/FosteredGames/Odyssey/registry/internal/identity"
 	"golang.org/x/oauth2"
 )
 
 func main() {
 	cfg, err := ConfigFromEnv()
+	if err != nil {
+		panic(err)
+	}
+
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		panic(err)
 	}
@@ -22,5 +31,9 @@ func main() {
 		},
 	}
 
-	oauth.Run(oauthConf)
+	identity := identity.New(key, oauthConf)
+	go identity.Run()
+
+	for {
+	}
 }
