@@ -3,6 +3,7 @@ module github.com/FosteredGames/Odyssey/registry
 go 1.22.2
 
 require (
+	github.com/caarlos0/env/v11 v11.0.1 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

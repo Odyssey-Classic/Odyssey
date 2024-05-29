@@ -6,6 +6,7 @@ import (
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/data"
+	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 )
 
 type Registry struct {
@@ -15,6 +16,8 @@ type Registry struct {
 }
 
 func (r *Registry) Run(ctx context.Context) {
+	idServer := identity.New(r.OAuth.PrivateKey, r.OAuth.Config, r.DB)
+
 	mux := http.NewServeMux()
-	mux.Handle("/login", handler http.Handler)
+	mux.Handle("/identity", handler http.Handler)
 }

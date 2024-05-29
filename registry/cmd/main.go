@@ -14,6 +14,7 @@ import (
 	"github.com/FosteredGames/Odyssey/registry/internal/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry"
+	"github.com/caarlos0/env/v11"
 	"golang.org/x/oauth2"
 )
 
@@ -21,12 +22,12 @@ func main() {
 	// Ignoring stop func for now as we expect this to run until killed
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 
-	cfg, err := config.ConfigFromEnv()
-	if err != nil {
+	cfg := config.Config{}
+	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
 
-	db, err := data.NewDB(context.Background(), cfg.DBConnection)
+	db, err := data.NewDB(ctx, cfg.DBConnection)
 	if err != nil {
 		log.Fatal(err)
 	}
