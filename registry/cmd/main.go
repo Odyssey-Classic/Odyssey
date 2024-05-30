@@ -11,11 +11,9 @@ import (
 	"sync"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
-	"github.com/FosteredGames/Odyssey/registry/internal/data"
-	"github.com/FosteredGames/Odyssey/registry/internal/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry"
+	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/caarlos0/env/v11"
-	"golang.org/x/oauth2"
 )
 
 func main() {
@@ -27,19 +25,25 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// TODO - use passed in key, provide a utility to create keys
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	db, err := data.NewDB(ctx, cfg.DBConnection)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
 	reg := &registry.Registry{
-		DB:    db,
-		OAuth: &cfg.OAuth,
+		DB:          db,
+		OAuthConfig: cfg.OAuth,
+		PrivateKey:  key,
 	}
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
 		reg.Run(ctx)
 		wg.Done()
@@ -52,31 +56,5 @@ func main() {
 			return
 		}
 
-	}
-
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	oauthConf := &oauth2.Config{
-		ClientID:     cfg.OAuth.ClientID,
-		ClientSecret: cfg.OAuth.ClientSecret,
-		Scopes:       []string{},
-		RedirectURL:  cfg.OAuth.RedirectURL.String(),
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  cfg.OAuth.AuthorizationURL.String(),
-			TokenURL: cfg.OAuth.TokenURL.String(),
-		},
-	}
-
-	identity := identity.New(key, oauthConf, db)
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
-	go identity.Run(ctx)
-
-	select {
-	case <-ctx.Done():
-		stop()
 	}
 }
