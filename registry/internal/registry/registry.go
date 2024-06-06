@@ -43,6 +43,6 @@ func (r *Registry) Run(ctx context.Context) error {
 		server.Shutdown(ctx)
 	}()
 
-	slog.InfoContext(ctx, "starting server", "addr", server.Addr)
+	slog.InfoContext(ctx, "HTTP server starting", "address", server.Addr, "module", "registry")
 	return server.ListenAndServe()
 }
