@@ -2,10 +2,11 @@ package oauth
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+
+	"golang.org/x/oauth2"
 )
 
 type DiscordIdentity struct {
@@ -13,9 +14,22 @@ type DiscordIdentity struct {
 	Username string `json:"username"`
 }
 
-func (s *OAuthServer) oAuthCallback(w http.ResponseWriter, r *http.Request) {
+func (s *OAuthServer) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cfg := s.Config
+
+	state := r.URL.Query().Get("state")
+	if state == "" {
+		http.Error(w, "no state", http.StatusBadRequest)
+		return
+	}
+
+	verifier := s.verifiers[state]
+	delete(s.verifiers, state)
+	if verifier == "" {
+		http.Error(w, "no verifier", http.StatusBadRequest)
+		return
+	}
 
 	code := r.URL.Query().Get("code")
 	if code == "" {
@@ -23,8 +37,7 @@ func (s *OAuthServer) oAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// tok, err := cfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
-	tok, err := cfg.Exchange(ctx, code)
+	tok, err := cfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
 		slog.Error("failed exchange", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -40,13 +53,14 @@ func (s *OAuthServer) oAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	msg, _ := io.ReadAll(res.Body)
+
 	var user DiscordIdentity
 	err = json.Unmarshal(msg, &user)
 	if err != nil {
 		slog.Error("failed to unmarshal", "error", err)
 	}
-	fmt.Println(string(msg))
-	jwtToken, err := s.IdentityCallback(user.Id)
+
+	jwtToken, err := s.IdentityCallback(r.Context(), user.Id)
 	if err != nil {
 		slog.Error("failed to get jwt", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
