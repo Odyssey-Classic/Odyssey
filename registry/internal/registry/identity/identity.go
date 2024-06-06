@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -48,12 +49,13 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 		IdentityCallback: idServer.IdentityCallback,
 	}
 	mux.HandleFunc("/login", oAuthServer.OAuthRedirect)
+	mux.HandleFunc("/oauth/callback", oAuthServer.OAuthCallback)
 
 	return idServer
 }
 
 func (s *IdentityServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("identity server")
+	slog.InfoContext(r.Context(), "Identity Server", "path", r.URL.Path)
 	s.mux.ServeHTTP(w, r)
 }
 

@@ -1,6 +1,8 @@
 package servers
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type ServersServer struct {
 }
