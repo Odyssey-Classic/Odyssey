@@ -4,15 +4,15 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity/oauth"
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/oauth2"
 )
 
@@ -61,6 +61,7 @@ func (s *IdentityServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (string, error) {
 	fmt.Printf("identity callback: %v\n", id)
+
 	// if s.users[id] == "" {
 	s.newUser(ctx, id)
 	fmt.Printf("new user: %v\n", id)
@@ -83,11 +84,12 @@ func (s *IdentityServer) newUser(ctx context.Context, id string) {
 		DiscordID: id,
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-	_, err := db.InsertOne(ctx, user)
+	filter := bson.M{"discord_id": id}
+
+	result, err := db.ReplaceOne(ctx, filter, user, options.Replace().SetUpsert(true))
+	_ = result
 	if err != nil {
-		log.Println(err)
+		slog.Error(err.Error())
 	}
 }
 
