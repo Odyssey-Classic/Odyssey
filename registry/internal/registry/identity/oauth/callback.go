@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -40,14 +39,13 @@ func (s *OAuthServer) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	msg, _ := io.ReadAll(res.Body)
-	fmt.Printf("OAuth Response: \n%s\n", string(msg))
 
 	var user DiscordIdentity
 	err = json.Unmarshal(msg, &user)
 	if err != nil {
 		slog.Error("failed to unmarshal", "error", err)
 	}
-	fmt.Println(string(msg))
+
 	jwtToken, err := s.IdentityCallback(r.Context(), user.Id)
 	if err != nil {
 		slog.Error("failed to get jwt", "error", err)
