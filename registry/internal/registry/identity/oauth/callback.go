@@ -5,6 +5,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+
+	"golang.org/x/oauth2"
 )
 
 type DiscordIdentity struct {
@@ -16,14 +18,25 @@ func (s *OAuthServer) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cfg := s.Config
 
+	state := r.URL.Query().Get("state")
+	if state == "" {
+		http.Error(w, "no state", http.StatusBadRequest)
+		return
+	}
+
+	verifier := s.verifiers[state]
+	if verifier == "" {
+		http.Error(w, "no verifier", http.StatusBadRequest)
+		return
+	}
+
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "no code", http.StatusBadRequest)
 		return
 	}
 
-	// tok, err := cfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
-	tok, err := cfg.Exchange(ctx, code)
+	tok, err := cfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
 		slog.Error("failed exchange", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)

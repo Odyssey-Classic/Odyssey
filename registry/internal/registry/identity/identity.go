@@ -44,10 +44,8 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 		mux:        mux,
 	}
 
-	oAuthServer := &oauth.OAuthServer{
-		Config:           idServer.oAuth,
-		IdentityCallback: idServer.IdentityCallback,
-	}
+	oAuthServer := oauth.New(idServer.oAuth, idServer.IdentityCallback)
+
 	mux.HandleFunc("/login", oAuthServer.OAuthRedirect)
 	mux.HandleFunc("/oauth/callback", oAuthServer.OAuthCallback)
 
