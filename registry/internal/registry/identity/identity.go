@@ -58,20 +58,13 @@ func (s *IdentityServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (string, error) {
-	fmt.Printf("identity callback: %v\n", id)
-
-	// if s.users[id] == "" {
 	s.newUser(ctx, id)
-	fmt.Printf("new user: %v\n", id)
+
 	tok, err := s.GenerateJWT(id)
 	if err != nil {
 		fmt.Printf("failed to generate jwt: %v\n", err)
 		return "", err
 	}
-	// s.users[id] = tok
-	// }
-
-	fmt.Printf("jwt %s\n", tok)
 
 	return tok, nil
 }

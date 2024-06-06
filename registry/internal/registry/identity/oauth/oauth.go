@@ -2,7 +2,10 @@ package oauth
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/base64"
 	"net/http"
+	"strings"
 
 	"golang.org/x/oauth2"
 )
@@ -18,20 +21,25 @@ func New(config *oauth2.Config, callback func(context.Context, string) (string, 
 	return &OAuthServer{
 		Config:           config,
 		IdentityCallback: callback,
-		verifiers:        make(map[string]string, 10),
+
+		verifiers: make(map[string]string, 10),
 	}
 }
 
 func (s *OAuthServer) OAuthRedirect(w http.ResponseWriter, r *http.Request) {
-	// TODO: save verifier to use it in callback
-	state, verifier := s.createVerifier()
+	state, verifier := s.createVerifier(r)
 	url := s.Config.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier))
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func (s *OAuthServer) createVerifier() (string, string) {
-	state := oauth2.GenerateVerifier()
+func (s *OAuthServer) createVerifier(r *http.Request) (string, string) {
+	// TODO: How do we delete UNUSED verifiers? If a user doesn't complete the oauth flow.
+
+	// hash just the ip address, without remote port
+	ipHash := md5.Sum([]byte(strings.Split(r.RemoteAddr, ":")[0]))
+
+	state := base64.StdEncoding.EncodeToString(ipHash[:])
 	verifier := oauth2.GenerateVerifier()
-	s.verifiers[state] = verifier
+	s.verifiers[string(state)] = verifier
 	return state, verifier
 }

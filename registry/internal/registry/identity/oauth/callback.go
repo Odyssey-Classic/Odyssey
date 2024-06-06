@@ -25,6 +25,7 @@ func (s *OAuthServer) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	verifier := s.verifiers[state]
+	delete(s.verifiers, state)
 	if verifier == "" {
 		http.Error(w, "no verifier", http.StatusBadRequest)
 		return
