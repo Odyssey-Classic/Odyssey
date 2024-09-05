@@ -1,6 +1,5 @@
-module github.com/FosteredGames/Odyssey/server
+module github.com/Odyssey-Classic/Odyssey/server
 
 go 1.22.2
 
-require (
-)
+require github.com/gorilla/websocket v1.5.3
