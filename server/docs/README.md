@@ -21,12 +21,12 @@ Admin handles administrative tasks.
 e.g. an API that allows admins to upload Map updates.
 
 ## Player Join Flow
-Client: sends request to Meta with Id.
-Meta: returns character list, any other info needed to start playing.
-Client: requests connection with Id and data returned from meta.
-Networking: upgrades to websocket persistent connection.
-Game: puts character in world.
-Client <-> Netowrk <-> Game, Player playing.
+Client: sends request to Meta with Id.  
+Meta: returns character list, any other info needed to start playing.  
+Client: requests connection with Id and data returned from meta.  
+Networking: upgrades to websocket persistent connection.  
+Game: puts character in world.  
+Client <-> Netowrk <-> Game, Player playing.  
 
-This way, Player objects are always full players and not in
+This way, Player objects are always full players and not in  
 "connected but not playing" states.
