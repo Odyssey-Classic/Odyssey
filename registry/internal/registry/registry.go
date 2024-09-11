@@ -25,8 +25,8 @@ func (r *Registry) Run(ctx context.Context) error {
 	idServer := identity.New(r.PrivateKey, r.OAuthConfig, r.DB)
 	mux.Handle("/identity/", http.StripPrefix("/identity", idServer))
 
-	serversServer := &servers.ServersServer{}
-	mux.Handle("/servers", idServer.AuthorizeMiddleware(serversServer))
+	serversService := servers.New(r.DB)
+	mux.Handle("/servers/", http.StripPrefix("/servers", idServer.AuthorizeMiddleware(serversService)))
 
 	server := &http.Server{
 		Addr:    ":8080",
