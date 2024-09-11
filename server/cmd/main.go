@@ -10,9 +10,9 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/Odyssey-Classic/Odyssey/server/internal/admin"
-	"github.com/Odyssey-Classic/Odyssey/server/internal/game"
-	"github.com/Odyssey-Classic/Odyssey/server/internal/network"
+	"github.com/Odyssey-Classic/Odyssey/server/internal/services/admin"
+	"github.com/Odyssey-Classic/Odyssey/server/internal/services/game"
+	"github.com/Odyssey-Classic/Odyssey/server/internal/services/network"
 )
 
 func main() {
