@@ -1,6 +1,6 @@
 package game
 
-import "github.com/Odyssey-Classic/Odyssey/server/internal/network"
+import "github.com/Odyssey-Classic/Odyssey/server/internal/services/network"
 
 type Player struct {
 	client *network.Client

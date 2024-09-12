@@ -26,7 +26,9 @@ func (g *Game) start(ctx context.Context, network chan any) {
 	for {
 		select {
 		case msg := <-network:
-			slog.Info("game received message: %v", msg)
+			slog.Info("game received message: ", "message", msg)
+			// msg.Type = new Client
+			//   game.NewPlayer(client)
 		case <-ctx.Done():
 			slog.Info("game shutting down")
 			return
