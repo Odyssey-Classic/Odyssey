@@ -1,0 +1,11 @@
+{
+  "name": "client",
+  "version": "0.0.1",
+  "main": "index.js",
+  "dependencies": {
+    "google-protobuf": "^3.21.4"
+  },
+  "devDependencies": {
+    "protoc-gen-js": "^3.21.2"
+  }
+}
