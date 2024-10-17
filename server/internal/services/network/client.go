@@ -4,7 +4,9 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/Odyssey-Classic/Odyssey/server/pb"
 	"github.com/gorilla/websocket"
+	"google.golang.org/protobuf/proto"
 )
 
 // Represents a client with a WebSocket connection
@@ -30,8 +32,19 @@ func (c *Client) close() error {
 
 // Reads a single message
 func (c *Client) read() (any, error) {
-	var msg any
-	err := c.conn.ReadJSON(&msg)
+	_, bytes, err := c.conn.ReadMessage()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	msg := &pb.GameMessage{}
+	err = proto.Unmarshal(bytes, msg)
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	slog.Info("received message", "type", msg.Type)
+
 	return msg, err
 }
 

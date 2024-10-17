@@ -24,3 +24,5 @@ node_modules/
 build/
 
 server/pb/
+client/pb/
+client/bundle/

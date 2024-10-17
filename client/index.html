@@ -3,6 +3,7 @@
 
 <head>
     <script src="https://pixijs.download/release/pixi.js"></script>
+    <script src="./bundle/bundle.js" type="module"></script>
 </head>
 
 <body>
@@ -11,24 +12,6 @@
         const app = new PIXI.Application();
         await app.init({ width: 640, height: 360 });
         document.body.appendChild(app.canvas);
-        let ws = new WebSocket('ws://localhost:8080/ws');
-        ws.binaryType = "arraybuffer";
-
-        ws.addEventListener('open', (event) => {
-            console.log('Connected to server');
-        });
-
-        ws.addEventListener('error', (event) => {
-            console.error('Error:', event);
-        });
-
-        ws.addEventListener('close', (event) => {
-            console.log('Disconnected from server');
-        });
-
-        ws.addEventListener('message', (event) => {
-            console.log('Message:', event.data);
-        })
     </script>
 </body>
 
