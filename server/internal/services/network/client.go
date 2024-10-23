@@ -45,6 +45,12 @@ func (c *Client) read() (any, error) {
 
 	slog.Info("received message", "type", msg.Type)
 
+	bytes, err = proto.Marshal(msg)
+	if err != nil {
+		slog.Error("marshaling msg", "error", err)
+	}
+	c.conn.WriteMessage(websocket.BinaryMessage, bytes)
+
 	return msg, err
 }
 
