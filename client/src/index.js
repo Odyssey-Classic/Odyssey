@@ -4,10 +4,11 @@ let ws = new WebSocket('ws://172.18.87.126:3001/ws');
 ws.binaryType = "arraybuffer";
 ws.onopen = (event) => {
     var message = new messages.GameMessage();
+    message.setType(1);
     var bytes = message.serializeBinary();
+    console.log(message.getType());
     console.log(bytes);
     ws.send(bytes);
-    console.log('Connected to server');
 };
 
 ws.addEventListener('error', (event) => {
