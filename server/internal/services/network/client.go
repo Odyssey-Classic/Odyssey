@@ -35,6 +35,7 @@ func (c *Client) read() (any, error) {
 	_, bytes, err := c.conn.ReadMessage()
 	if err != nil {
 		slog.Error(err.Error())
+		return nil, err
 	}
 
 	msg := &pb.GameMessage{}
@@ -70,6 +71,7 @@ func (c *Client) processOutbound(ctx context.Context) error {
 		case msg := <-c.toRemote:
 			err := c.write(msg)
 			if err != nil {
+				slog.ErrorContext(ctx, "writing", "error", err)
 				c.close()
 				return err
 			}
@@ -79,7 +81,9 @@ func (c *Client) processOutbound(ctx context.Context) error {
 
 // Infinite loop that receives messages from remote
 func (c *Client) processInbound(ctx context.Context) error {
+	slog.DebugContext(ctx, "pre for")
 	for {
+		slog.DebugContext(ctx, "pre select")
 		select {
 		case <-ctx.Done():
 			c.close()
@@ -87,10 +91,19 @@ func (c *Client) processInbound(ctx context.Context) error {
 		default:
 			msg, err := c.read()
 			if err != nil {
+				slog.ErrorContext(ctx, "reading", "error", err)
 				c.close()
 				return err
 			}
-			c.fromRemote <- msg
+
+			select {
+			case c.fromRemote <- msg:
+				// Message successfully pushed to channel.
+			default:
+				// Message failed push to channel.
+				// Messages coming faster than we can process them?
+				// TODO figure out if we need to worry about this.
+			}
 		}
 	}
 }
