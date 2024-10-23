@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = ".;pb";
+
+enum MessageType {
+    MESSAGE_TYPE_UNSPECIFIED = 0;
+
+    MESSAGE_TYPE_JOIN_GAME = 1;
+}
+
+message GameMessage{
+    MessageType type = 1;
+}

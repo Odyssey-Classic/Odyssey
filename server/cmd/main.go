@@ -13,11 +13,15 @@ import (
 	// "github.com/Odyssey-Classic/Odyssey/server/internal/services/admin"
 	"github.com/Odyssey-Classic/Odyssey/server/internal/services/game"
 	"github.com/Odyssey-Classic/Odyssey/server/internal/services/network"
+
+	"github.com/Odyssey-Classic/Odyssey/server/pb"
 )
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+
+	var _ pb.GameMessage
 
 	var wg sync.WaitGroup
 

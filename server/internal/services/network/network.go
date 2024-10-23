@@ -41,7 +41,7 @@ func (n *Network) Start(ctx context.Context, wg *sync.WaitGroup) chan any {
 
 func (n *Network) start(ctx context.Context) {
 	server := &http.Server{
-		Addr: ":8080",
+		Addr: ":3001",
 	}
 	server.Handler = n.wsConnect(ctx)
 	server.BaseContext = func(listener net.Listener) context.Context { return ctx }
@@ -67,7 +67,10 @@ func (n *Network) addClient(ctx context.Context, client *Client) {
 func (n *Network) shutdown() {
 	slog.Info("shutting down clients")
 	for _, client := range n.clients {
-		client.close()
+		err := client.close()
+		if err != nil {
+			slog.Error("error closing client", "error", err)
+		}
 	}
 
 	// TODO cleanup maps?

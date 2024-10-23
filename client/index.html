@@ -3,6 +3,7 @@
 
 <head>
     <script src="https://pixijs.download/release/pixi.js"></script>
+    <script src="./bundle/bundle.js" type="module"></script>
 </head>
 
 <body>
@@ -11,7 +12,6 @@
         const app = new PIXI.Application();
         await app.init({ width: 640, height: 360 });
         document.body.appendChild(app.canvas);
-        let ws = new WebSocket('ws://localhost:8080/ws');
     </script>
 </body>
 
