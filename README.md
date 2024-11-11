@@ -4,14 +4,14 @@ Modern remake of Odyssey Classic
 # Development
 
 ## Local Dev
-Use browserify to bundle client source:  
-`npx browserify ./client/src/index.js -o ./client/bundle.js`
+Use build and bundle source:  
+`make bundle`
 
 Use http-server to host client locally:  
-`npx http-server ./client`
+`make host`
 
 ## Protobufs
-`npm install -g protoc-gen-js`  
+`npm install -g protoc-gen-ts`  
 `go install github.com/golang/protobuf/protoc-gen-go@latest`
 
 https://github.com/protocolbuffers/protobuf  

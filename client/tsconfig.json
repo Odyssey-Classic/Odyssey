@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "alwaysStrict": true,
+        "removeComments": false,
+        "skipLibCheck": true, // Having trouble with `css-font-loading-module`
+        "sourceMap": true,
+        "outDir": "dist"
+    },
+    "include": [
+        "src/**/*",
+        "pb/**/*"
+    ]
+}

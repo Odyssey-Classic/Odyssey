@@ -1,11 +1,19 @@
 {
   "name": "client",
   "version": "0.0.1",
-  "main": "index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
   "dependencies": {
-    "google-protobuf": "^3.21.4"
+    "google-protobuf": "^3.21.4",
+    "pixijs": "^7.1.4"
   },
   "devDependencies": {
-    "protoc-gen-js": "^3.21.2"
+    "@types/css-font-loading-module": "^0.0.14",
+    "@types/node": "^22.9.0",
+    "protoc-gen-js": "^3.21.2",
+    "protoc-gen-ts": "^0.8.7",
+    "typescript": "^5.6.3"
   }
 }
