@@ -8,24 +8,24 @@ export class KeyboardHandler {
     }
 
     start() {
-        document.addEventListener("keydown", this.keydown.bind(this), true)
-        document.addEventListener("keyup", this.keyup.bind(this), true)
-        document.addEventListener("keypress", this.keypress.bind(this), true)
+        document.addEventListener("keydown", this.keyDown.bind(this), true)
+        document.addEventListener("keyup", this.keyUp.bind(this), true)
+        document.addEventListener("keypress", this.keyPress.bind(this), true)
     }
     stop() {
-        document.removeEventListener("keydown", this.keydown)
-        document.removeEventListener("keyup", this.keyup)
-        document.removeEventListener("keypress", this.keypress)
+        document.removeEventListener("keydown", this.keyDown)
+        document.removeEventListener("keyup", this.keyUp)
+        document.removeEventListener("keypress", this.keyPress)
     }
 
-    protected keydown(e: KeyboardEvent) {
-        this.log(e)
+    protected keyDown(e: KeyboardEvent) {
+        this.map.keyDown(e)
     }
-    protected keyup(e: KeyboardEvent) {
-        this.log(e)
+    protected keyUp(e: KeyboardEvent) {
+        this.map.keyUp(e)
     }
-    protected keypress(e: KeyboardEvent) {
-        this.log(e)
+    protected keyPress(e: KeyboardEvent) {
+        this.map.keyPress(e)
     }
 
     protected log(e: KeyboardEvent) {

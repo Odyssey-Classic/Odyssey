@@ -1,9 +1,18 @@
-import { GameMessage } from '../pb/game_message'
-import { KeyboardHandler } from './input/handler'
-import { KeyMap } from './input/keymap'
+import { Game } from './game'
 
-let keys = new KeyboardHandler(new KeyMap())
-keys.start()
+let game = new Game()
+game.start().then(() => {
+    console.log(game)
+    document.body.appendChild(game.app.canvas);
+})
+
+
+// import { GameMessage } from '../pb/game_message'
+// import { KeyboardHandler } from './input/handler'
+// import { KeyMap } from './input/keymap'
+
+// let keys = new KeyboardHandler(new KeyMap())
+// keys.start()
 
 // let ws = new WebSocket('ws://172.18.87.126:3001/ws')
 // ws.binaryType = "arraybuffer"

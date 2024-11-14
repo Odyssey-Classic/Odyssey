@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "google-protobuf": "^3.21.4",
-    "pixijs": "^7.1.4"
+    "pixi.js": "^8.5.2"
   },
   "devDependencies": {
     "@types/css-font-loading-module": "^0.0.14",
