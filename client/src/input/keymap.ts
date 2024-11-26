@@ -1,5 +1,7 @@
+import { Action } from "./action"
+
 let keys = {
-    "KeyW": (e: KeyboardEvent) => {
+    "KeyW|false|false|false|false": (e: KeyboardEvent) => {
         console.log("Up")
     },
     "KeyA": (e: KeyboardEvent) => {
@@ -19,19 +21,39 @@ let keys = {
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent|Keyboard Event}
  */
 export class KeyMap {
-    keyDown(e: KeyboardEvent) {
-        if (keys[e.code] != null) {
-            keys[e.code](e)
-        } else {
-            console.log(e.code)
+    protected map: Map<string, Action>
+
+    constructor() {
+        this.map = new Map<string, Action>()
+    }
+
+    setKey(code: string, action: Action) {
+        this.map.set(code, action)
+    }
+
+    setKeyFromEvent(e: KeyboardEvent, action: Action) {
+        let code = KeyMap.keyCode(e)
+        this.setKey(code, action)
+    }
+
+    getAction(code: string): Action | null {
+        if (this.map.has(code)) {
+            return this.map.get(code)
         }
+        return null
     }
 
-    keyUp(key: KeyboardEvent) {
-
+    getActionFromEvent(e: KeyboardEvent): Action | null {
+        let code = KeyMap.keyCode(e)
+        return this.getAction(code)
     }
 
-    keyPress(key: KeyboardEvent) {
-
+    /**
+     * keyCode generates a string based on what keys are being pressed
+     * @param e 
+     * @returns 
+     */
+    static keyCode(e: KeyboardEvent): string {
+        return `${e.code}${(e.altKey) ? "+alt" : ""}${(e.ctrlKey) ? "+ctrl" : ""}${(e.metaKey) ? "+meta" : ""}${(e.shiftKey) ? "+shift" : ""}`
     }
 }
