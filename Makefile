@@ -20,7 +20,8 @@ protoc:
 bundle:
 	cd ./client; \
 	npm run build
-	npx browserify ./client/dist/src/index.js -o ./client/bundle/bundle.js
+	cd ./client; \
+	npx browserify ./dist/src/index.js -o ./bundle/bundle.js
 
 
 host:

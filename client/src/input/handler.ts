@@ -1,4 +1,4 @@
-import { KeyMap } from "./keymap";
+import { KeyMap } from "./keymap"
 
 export class KeyboardHandler {
     map: KeyMap
