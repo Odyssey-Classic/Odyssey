@@ -1,6 +1,7 @@
-const path = require('path')
+import path from 'path'
 
-module.exports = {
+export default {
+    mode: "development",
     entry: './src/index.ts',
     devtool: 'inline-source-map',
     module: {
@@ -17,6 +18,6 @@ module.exports = {
     },
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve('./dist'),
     },
 }

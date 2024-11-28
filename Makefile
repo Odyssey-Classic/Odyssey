@@ -6,7 +6,7 @@ CLIENT_PATH = ./client
 clean:
 	rm -rf ${SERVER_PATH}/pb/*
 	rm -rf ${CLIENT_PATH}/pb/*
-	rm -rf ${CLIENT_PATH}/bundle/*
+	rm -rf ${CLIENT_PATH}/dist/*
 	cd ./client; npm run clean
 
 protoc:
@@ -19,9 +19,7 @@ protoc:
 
 bundle:
 	cd ./client; \
-	npm run build
-	cd ./client; \
-	npx browserify ./dist/src/index.js -o ./bundle/bundle.js
+	npx webpack
 
 
 host:
