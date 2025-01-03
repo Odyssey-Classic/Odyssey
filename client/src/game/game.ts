@@ -1,19 +1,17 @@
 import * as Pixi from 'pixi.js'
-import { KeyboardHandler, KeyState } from '../input';
+import { KeyboardHandler } from '../input';
 
 /**
  * Game is our root class for handling all game client activities.
  */
 export class Game {
     app: Pixi.Application
-    keyState: KeyState
     keyboardInput: KeyboardHandler
 
     constructor() {
         this.app = new Pixi.Application();
 
-        this.keyState = new KeyState()
-        this.keyboardInput = new KeyboardHandler(this.keyState)
+        this.keyboardInput = new KeyboardHandler()
     }
 
     async start() {
@@ -26,7 +24,7 @@ export class Game {
     update(ticker: Pixi.Ticker) {
         let delta = ticker.deltaMS
 
-        let keys = this.keyState.getKeys(true)
+        let keys = this.keyboardInput.getKeys(true)
         if (keys.length) {
 
         }

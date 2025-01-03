@@ -3,8 +3,8 @@ import { KeyState } from "./state"
 export class KeyboardHandler {
     state: KeyState
 
-    constructor(state: KeyState) {
-        this.state = state
+    constructor() {
+        this.state = new KeyState()
     }
 
     start() {
@@ -14,6 +14,10 @@ export class KeyboardHandler {
     stop() {
         document.removeEventListener("keydown", this.keyDown)
         document.removeEventListener("keyup", this.keyUp)
+    }
+
+    getKeys(clear: boolean): string[] {
+        return this.state.getKeys(clear)
     }
 
     protected keyDown(e: KeyboardEvent) {
