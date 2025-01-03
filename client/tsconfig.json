@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "alwaysStrict": true,
+        "removeComments": false,
+        "skipLibCheck": true, // Having trouble with `css-font-loading-module`
+        "sourceMap": true,
+        "outDir": "dist",
+        "target": "ESNext"
+    },
+    "include": [
+        "src/**/*",
+        "pb/**/*"
+    ],
+}

@@ -1,0 +1,14 @@
+- Player Presses Key.
+- Event Handler Triggered.
+- Handler Requests Action from Key Map.
+- Handler Sets Action Active `Action.Down()`.
+---
+- Player Releases Key.
+- Handler Triggered.
+- Handler Requests Action from KeyMap.
+- Handler Sets Action Clerable `Action.Up()`.
+---
+- Game Loop requests active actions.
+- Action State owns list of Active Actions
+- This can be a dumb loop checking each action `Action.Active()` and building a list.
+- This request can either clear, clearable actions, or not. Clear by Default.
