@@ -28,7 +28,7 @@ export class Game {
 
         let keys = this.keyState.getKeys(true)
         if (keys.length) {
-            console.log(keys[0])
+
         }
     }
 }
