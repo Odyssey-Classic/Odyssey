@@ -1,0 +1,82 @@
+import { Container, Graphics } from "pixi.js"
+import { Direction } from "./direction"
+import { Position } from "./position"
+import { DEG_TO_RAD } from "pixi.js"
+
+const arcs = {
+    [Direction.Up]: { start: 225 * DEG_TO_RAD, end: 315 * DEG_TO_RAD, counterClockwise: false },
+    [Direction.Down]: { start: 45 * DEG_TO_RAD, end: 135 * DEG_TO_RAD, counterClockwise: false },
+    [Direction.Left]: { start: 135 * DEG_TO_RAD, end: 225 * DEG_TO_RAD, counterClockwise: false },
+    [Direction.Right]: { start: 315 * DEG_TO_RAD, end: 45 * DEG_TO_RAD, counterClockwise: false },
+}
+
+export class Character extends Container {
+    public gamePosition: Position
+    private _direction: Direction
+    private offset: { x: number, y: number }
+
+    private shape: Graphics
+
+    constructor() {
+        super()
+        this.isRenderGroup = true
+
+        this.offset = {
+            x: 0,
+            y: 0,
+        }
+
+        this.shape = new Graphics()
+        this.direction = Direction.Right
+        this.makeShape()
+        this.addChild(this.shape)
+    }
+
+    get direction() {
+        return this._direction
+    }
+    set direction(d: Direction) {
+        this._direction = d
+        this.makeShape()
+    }
+
+    protected makeShape() {
+        let center = {
+            x: 16 + this.offset.x,
+            y: 16 + this.offset.y,
+        }
+        this.shape.clear()
+        this.shape.circle(center.x, center.y, 16)
+        this.shape.fill(0xffffff)
+
+        this.shape.moveTo(center.x, center.y)
+        let arc = arcs[this.direction]
+        this.shape.arc(center.x, center.y, 16, arc.start, arc.end, arc.counterClockwise)
+        this.shape.fill(0x0000ff)
+
+        let d = DeltaUnit(this.direction)
+        this.shape.moveTo(center.x, center.y)
+        this.shape.lineTo(d.x * 24 + 16, d.y * 24 + 16)
+        this.shape.stroke({
+            width: 3,
+            color: 0xff0000,
+        })
+    }
+}
+
+// Yes, we could do this with a conditional block, but I like being special.
+function getDeltaX(d: Direction): number {
+    return ((d - 3) % 2)
+}
+
+// Yes, we could do this with a conditional block, but I like being special.
+function getDeltaY(d: Direction): number {
+    return ((d - 2) % 2)
+}
+
+function DeltaUnit(d: Direction): { x: number, y: number } {
+    return {
+        x: getDeltaX(d),
+        y: getDeltaY(d),
+    }
+}

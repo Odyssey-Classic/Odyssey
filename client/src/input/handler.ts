@@ -1,7 +1,7 @@
 import { KeyState } from "./state"
 
 export class KeyboardHandler {
-    state: KeyState
+    protected state: KeyState
 
     constructor() {
         this.state = new KeyState()
