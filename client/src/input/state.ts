@@ -25,23 +25,9 @@ export class KeyState {
 
     constructor() {
         this.keys = new Map<string, state>()
-
-        console.log("meta mod keys", metaModifiers.keys())
     }
 
     keyDown(code: string) {
-
-        // Meta keys aren't usable individually.
-        // Technical issue is that `keydown` will populate both the code and the
-        // specific meta key field.
-        // However, `keyup` will only have the code.
-        // So, with our hash `keyCode()`, this means that meta keys will never
-        // clear.
-        if (metaCodes.includes(code)) {
-            console.log("ignoring", code)
-            return
-        }
-
         let key = this.keys.get(code)
         if (!this.keys.has(code)) {
             key = new state(code)
