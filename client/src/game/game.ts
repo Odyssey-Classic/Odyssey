@@ -38,16 +38,16 @@ export class Game {
                 console.info(k)
                 switch (k) {
                     case 'KeyW':
-                        this.player.direction = Direction.Up
+                        this.player.move(Direction.Up)
                         break
                     case 'KeyS':
-                        this.player.direction = Direction.Down
+                        this.player.move(Direction.Down)
                         break
                     case 'KeyA':
-                        this.player.direction = Direction.Left
+                        this.player.move(Direction.Left)
                         break
                     case 'KeyD':
-                        this.player.direction = Direction.Right
+                        this.player.move(Direction.Right)
                         break
                 }
             })

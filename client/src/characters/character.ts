@@ -12,8 +12,10 @@ const arcs = {
 
 export class Character extends Container {
     public gamePosition: Position
-    private _direction: Direction
+    private _direction: Direction = Direction.Right
     private offset: { x: number, y: number }
+
+    private moving: boolean = false
 
     private shape: Graphics
 
@@ -27,7 +29,6 @@ export class Character extends Container {
         }
 
         this.shape = new Graphics()
-        this.direction = Direction.Right
         this.makeShape()
         this.addChild(this.shape)
     }
@@ -38,6 +39,14 @@ export class Character extends Container {
     set direction(d: Direction) {
         this._direction = d
         this.makeShape()
+    }
+
+    update(deltaMS: number) {
+    }
+
+    move(d: Direction) {
+        this.direction = d
+        this.moving = true
     }
 
     protected makeShape() {

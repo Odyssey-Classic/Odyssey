@@ -39,20 +39,6 @@ export class KeyState {
     }
 
     keyUp(code: string) {
-        // If a user releases the meta key before the other keys,
-        // this needs to catch that and mark all combos including the meta key.
-        if (metaModifiers.keys().find((v) => {
-            return v.includes(code)
-        })) {
-            let metaCode = metaModifiers.get(code)
-            console.log("clearing meta", code, metaCode)
-            this.keys.forEach((key) => {
-                key.clearable = key.code.includes(metaCode)
-            })
-
-            return
-        }
-
         if (!this.keys.has(code)) {
             return
         }
@@ -83,7 +69,7 @@ export class KeyState {
 }
 
 class state {
-    code: string // The combined key code for keys and modifiers.
+    code: string
     active: boolean = true
     clearable: boolean = false
 
