@@ -10,27 +10,27 @@ const arcs = {
     [Direction.Right]: { start: 315 * DEG_TO_RAD, end: 45 * DEG_TO_RAD, counterClockwise: false },
 }
 
+const turnTimeMS: number = 100
+
 export class Character extends Container {
-    public gamePosition: Position
+    public gamePosition: Position = new Position()
     private _direction: Direction = Direction.Right
-    private offset: { x: number, y: number }
+    private offset: { x: number, y: number } = { x: 0, y: 0 }
 
     private moving: boolean = false
+    private turnTimeMS: number = 0
+
+    private speed: number = 1
 
     private shape: Graphics
 
     constructor() {
         super()
         this.isRenderGroup = true
-
-        this.offset = {
-            x: 0,
-            y: 0,
-        }
-
         this.shape = new Graphics()
-        this.makeShape()
         this.addChild(this.shape)
+
+        this.makeShape()
     }
 
     get direction() {
@@ -41,18 +41,40 @@ export class Character extends Container {
         this.makeShape()
     }
 
+    // Start Move Called
+    // Check current direction vs new
+    // Can Move check TODO
+    // Set Moving True
+    // 
+
     update(deltaMS: number) {
+        if (this.turnTimeMS > 0) {
+            this.turnTimeMS -= deltaMS
+            return
+        }
+        if (this.moving) {
+            const d = DeltaUnit(this.direction)
+            this.position.x += d.x * (deltaMS / 1000) * 32
+            this.position.y += d.y * (deltaMS / 1000) * 32
+        }
     }
 
-    move(d: Direction) {
+    startMove(d: Direction) {
+        if (this.direction != d) {
+            this.turnTimeMS = turnTimeMS
+        }
         this.direction = d
         this.moving = true
     }
 
+    stopMove() {
+        this.moving = false
+    }
+
     protected makeShape() {
         let center = {
-            x: 16 + this.offset.x,
-            y: 16 + this.offset.y,
+            x: 16,
+            y: 16,
         }
         this.shape.clear()
         this.shape.circle(center.x, center.y, 16)
@@ -63,13 +85,13 @@ export class Character extends Container {
         this.shape.arc(center.x, center.y, 16, arc.start, arc.end, arc.counterClockwise)
         this.shape.fill(0x0000ff)
 
-        let d = DeltaUnit(this.direction)
-        this.shape.moveTo(center.x, center.y)
-        this.shape.lineTo(d.x * 24 + 16, d.y * 24 + 16)
-        this.shape.stroke({
-            width: 3,
-            color: 0xff0000,
-        })
+        // let d = DeltaUnit(this.direction)
+        // this.shape.moveTo(center.x, center.y)
+        // this.shape.lineTo(d.x * 24 + 16, d.y * 24 + 16)
+        // this.shape.stroke({
+        //     width: 3,
+        //     color: 0xff0000,
+        // })
     }
 }
 

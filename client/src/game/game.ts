@@ -25,7 +25,10 @@ export class Game {
     async start() {
         this.keyboardInput.start()
 
-        await this.app.init({ width: 200, height: 200 })
+        const width: number = 32 * 17
+        const height: number = 32 * 17
+
+        await this.app.init({ width: width, height: height })
         this.app.ticker.add(this.update.bind(this))
     }
 
@@ -33,24 +36,37 @@ export class Game {
         let delta = ticker.deltaMS
 
         let keys = this.keyboardInput.getKeys(true)
+        let moving: boolean = false
         if (keys.length) {
             keys.forEach((k) => {
                 console.info(k)
+                // TODO checking more keys once a single move key is found causes
+                // them to conflict and locks character.
+                // Let's see if anyone notices this in their play tests first.
                 switch (k) {
                     case 'KeyW':
-                        this.player.move(Direction.Up)
+                        this.player.startMove(Direction.Up)
+                        moving = true
                         break
                     case 'KeyS':
-                        this.player.move(Direction.Down)
+                        this.player.startMove(Direction.Down)
+                        moving = true
                         break
                     case 'KeyA':
-                        this.player.move(Direction.Left)
+                        this.player.startMove(Direction.Left)
+                        moving = true
                         break
                     case 'KeyD':
-                        this.player.move(Direction.Right)
+                        this.player.startMove(Direction.Right)
+                        moving = true
                         break
                 }
             })
+        }
+
+        this.player.update(delta)
+        if (!moving) {
+            this.player.stopMove()
         }
     }
 }
