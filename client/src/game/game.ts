@@ -19,7 +19,7 @@ export class Game {
         this.player.position.x = 100
         this.player.position.y = 100
         this.player.direction = Direction.Right
-        this.app.stage.addChild(this.player)
+        this.app.stage.addChild(this.player.container)
     }
 
     async start() {

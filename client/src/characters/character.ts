@@ -1,4 +1,4 @@
-import { Container, Graphics } from "pixi.js"
+import * as Pixi from "pixi.js"
 import { Direction } from "./direction"
 import { Position } from "./position"
 import { DEG_TO_RAD } from "pixi.js"
@@ -12,8 +12,8 @@ const arcs = {
 
 const turnTimeMS: number = 100
 
-export class Character extends Container {
-    public gamePosition: Position = new Position()
+export class Character {
+    public position: Position = new Position()
     private _direction: Direction = Direction.Right
     private offset: { x: number, y: number } = { x: 0, y: 0 }
 
@@ -22,13 +22,15 @@ export class Character extends Container {
 
     private speed: number = 1
 
-    private shape: Graphics
+    public container: Pixi.Container
+    private shape: Pixi.Graphics
 
     constructor() {
-        super()
-        this.isRenderGroup = true
-        this.shape = new Graphics()
-        this.addChild(this.shape)
+
+        this.container = new Pixi.Container()
+        this.container.isRenderGroup = true
+        this.shape = new Pixi.Graphics()
+        this.container.addChild(this.shape)
 
         this.makeShape()
     }
@@ -54,8 +56,8 @@ export class Character extends Container {
         }
         if (this.moving) {
             const d = DeltaUnit(this.direction)
-            this.position.x += d.x * (deltaMS / 1000) * 32
-            this.position.y += d.y * (deltaMS / 1000) * 32
+            this.container.position.x += d.x * (deltaMS / 1000) * 32
+            this.container.position.y += d.y * (deltaMS / 1000) * 32
         }
     }
 
