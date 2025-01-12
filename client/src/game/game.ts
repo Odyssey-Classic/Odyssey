@@ -11,6 +11,8 @@ export class Game {
     keyboardInput: KeyboardHandler
     player: Character
 
+    characterLayer: Pixi.Container
+
     constructor() {
         this.app = new Pixi.Application();
         this.keyboardInput = new KeyboardHandler()
@@ -19,7 +21,12 @@ export class Game {
         this.player.position.x = 100
         this.player.position.y = 100
         this.player.direction = Direction.Right
-        this.app.stage.addChild(this.player.container)
+
+
+        this.characterLayer = new Pixi.Container()
+        this.characterLayer.isRenderGroup = true
+        this.characterLayer.addChild(this.player.shape)
+        this.app.stage.addChild(this.characterLayer)
     }
 
     async start() {

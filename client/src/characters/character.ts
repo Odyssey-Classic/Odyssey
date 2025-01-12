@@ -2,6 +2,7 @@ import * as Pixi from "pixi.js"
 import { Direction } from "./direction"
 import { Position } from "./position"
 import { DEG_TO_RAD } from "pixi.js"
+import { Config } from "../config/config"
 
 const arcs = {
     [Direction.Up]: { start: 225 * DEG_TO_RAD, end: 315 * DEG_TO_RAD, counterClockwise: false },
@@ -22,16 +23,10 @@ export class Character {
 
     private speed: number = 1
 
-    public container: Pixi.Container
-    private shape: Pixi.Graphics
+    public shape: Pixi.Graphics
 
     constructor() {
-
-        this.container = new Pixi.Container()
-        this.container.isRenderGroup = true
         this.shape = new Pixi.Graphics()
-        this.container.addChild(this.shape)
-
         this.makeShape()
     }
 
@@ -48,6 +43,7 @@ export class Character {
     // Can Move check TODO
     // Set Moving True
     // 
+    // Graphic Position = Game Pos * 32 + 16
 
     update(deltaMS: number) {
         if (this.turnTimeMS > 0) {
@@ -56,8 +52,8 @@ export class Character {
         }
         if (this.moving) {
             const d = DeltaUnit(this.direction)
-            this.container.position.x += d.x * (deltaMS / 1000) * 32
-            this.container.position.y += d.y * (deltaMS / 1000) * 32
+            this.shape.position.x += d.x * (deltaMS / 1000) * Config.size
+            this.shape.position.y += d.y * (deltaMS / 1000) * Config.size
         }
     }
 
@@ -75,25 +71,17 @@ export class Character {
 
     protected makeShape() {
         let center = {
-            x: 16,
-            y: 16,
+            x: Config.size / 2,
+            y: Config.size / 2,
         }
         this.shape.clear()
-        this.shape.circle(center.x, center.y, 16)
+        this.shape.circle(center.x, center.y, Config.size / 2)
         this.shape.fill(0xffffff)
 
         this.shape.moveTo(center.x, center.y)
         let arc = arcs[this.direction]
-        this.shape.arc(center.x, center.y, 16, arc.start, arc.end, arc.counterClockwise)
-        this.shape.fill(0x0000ff)
-
-        // let d = DeltaUnit(this.direction)
-        // this.shape.moveTo(center.x, center.y)
-        // this.shape.lineTo(d.x * 24 + 16, d.y * 24 + 16)
-        // this.shape.stroke({
-        //     width: 3,
-        //     color: 0xff0000,
-        // })
+        this.shape.arc(center.x, center.y, Config.size / 2, arc.start, arc.end, arc.counterClockwise)
+        this.shape.fill(0x00ffff)
     }
 }
 
