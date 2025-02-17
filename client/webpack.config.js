@@ -4,6 +4,7 @@ export default {
     mode: "development",
     entry: './src/index.ts',
     devtool: 'inline-source-map',
+    watch: true,
     module: {
         rules: [
             {

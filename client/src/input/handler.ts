@@ -1,7 +1,7 @@
 import { KeyState } from "./state"
 
 export class KeyboardHandler {
-    state: KeyState
+    protected state: KeyState
 
     constructor() {
         this.state = new KeyState()
@@ -28,13 +28,13 @@ export class KeyboardHandler {
 
         console.log("down", e.code, KeyboardHandler.keyCode(e))
 
-        this.state.keyDown(KeyboardHandler.keyCode(e))
+        this.state.keyDown(e.code)
     }
 
     protected keyUp(e: KeyboardEvent) {
         console.log("up", e.code, KeyboardHandler.keyCode(e))
 
-        this.state.keyUp(KeyboardHandler.keyCode(e))
+        this.state.keyUp(e.code)
     }
 
     /**

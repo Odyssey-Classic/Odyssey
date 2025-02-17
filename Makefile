@@ -23,6 +23,6 @@ bundle:
 
 
 host:
-	npx http-server ./client/
+	npx http-server ./client/ -c-1
 
 build: clean protoc bundle
