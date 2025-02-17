@@ -2,6 +2,7 @@ import * as Pixi from 'pixi.js'
 import { KeyboardHandler } from '../input';
 import { Character } from '../characters/character';
 import { Direction } from '../characters/direction';
+import { Config } from '../config/config';
 
 /**
  * Game is our root class for handling all game client activities.
@@ -18,8 +19,10 @@ export class Game {
         this.keyboardInput = new KeyboardHandler()
         this.player = new Character()
 
-        this.player.position.x = 100
-        this.player.position.y = 100
+        this.app.stage.addChild(drawGrid())
+
+        this.player.position.x = 8
+        this.player.position.y = 8
         this.player.direction = Direction.Right
 
 
@@ -27,6 +30,7 @@ export class Game {
         this.characterLayer.isRenderGroup = true
         this.characterLayer.addChild(this.player.shape)
         this.app.stage.addChild(this.characterLayer)
+
     }
 
     async start() {
@@ -46,7 +50,7 @@ export class Game {
         let moving: boolean = false
         if (keys.length) {
             keys.forEach((k) => {
-                console.info(k)
+                console.info("Game Update: ", k)
                 // TODO checking more keys once a single move key is found causes
                 // them to conflict and locks character.
                 // Let's see if anyone notices this in their play tests first.
@@ -76,4 +80,25 @@ export class Game {
             this.player.stopMove()
         }
     }
+}
+
+function drawGrid(): Pixi.Graphics {
+    const grid = new Pixi.Graphics()
+    grid.setStrokeStyle({
+        width: 1,
+        color: 0x333333,
+    })
+
+    for (let c = 0; c <= 17; c++) {
+        grid.moveTo(c * Config.size, 0)
+        grid.stroke(0x333333)
+        grid.lineTo(c * Config.size, Config.rows * Config.size)
+    }
+    for (let r = 0; r <= 17; r++) {
+        grid.moveTo(0, r * Config.size)
+        grid.stroke(0x333333)
+        grid.lineTo(Config.size * Config.columns, r * Config.size)
+    }
+
+    return grid
 }

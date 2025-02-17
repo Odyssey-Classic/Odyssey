@@ -13,12 +13,22 @@ const arcs = {
 
 const turnTimeMS: number = 100
 
+enum State {
+    Idle = 0,
+    Turning = 1,
+    Moving = 2,
+    Attacking = 3,
+}
+
 export class Character {
     public position: Position = new Position()
     private _direction: Direction = Direction.Right
     private offset: { x: number, y: number } = { x: 0, y: 0 }
 
-    private moving: boolean = false
+    private _state: State = State.Idle
+
+    private moveShifted: boolean = true
+    private moveTimeMS: number = 0
     private turnTimeMS: number = 0
 
     private speed: number = 1
@@ -38,35 +48,84 @@ export class Character {
         this.makeShape()
     }
 
+    get state() {
+        return this._state
+    }
+    set state(s: State) {
+        this._state = s
+        console.log("State Set:", s)
+    }
+
     // Start Move Called
     // Check current direction vs new
     // Can Move check TODO
     // Set Moving True
-    // 
-    // Graphic Position = Game Pos * 32 + 16
+    // if (moving), when we actually start moving, flag that we need to complete our move.
+    //
+    // Graphic Position = Game Pos * 32
+    // Shapes drawn add the 16,16 to center the shape currently
 
     update(deltaMS: number) {
-        if (this.turnTimeMS > 0) {
-            this.turnTimeMS -= deltaMS
-            return
+        switch (this.state) {
+            case State.Turning:
+                if (this.turnTimeMS > 0) {
+                    this.turnTimeMS -= deltaMS
+                }
+
+                if (this.turnTimeMS <= 0) {
+                    this.state = State.Idle
+                }
+                return
+            case State.Moving:
+                const d = DeltaUnit(this.direction)
+
+                this.moveTimeMS -= deltaMS
+                if (this.moveTimeMS <= 500 && !this.moveShifted) {
+                    this.shiftPosition(d)
+                    this.moveShifted = true
+                }
+
+                this.offset.x += (d.x * (deltaMS / 1000) * Config.size)
+                this.offset.y += (d.y * (deltaMS / 1000) * Config.size)
+
+                if (this.moveTimeMS <= 0) {
+                    this.state = State.Idle
+                }
+                break
         }
-        if (this.moving) {
-            const d = DeltaUnit(this.direction)
-            this.shape.position.x += d.x * (deltaMS / 1000) * Config.size
-            this.shape.position.y += d.y * (deltaMS / 1000) * Config.size
-        }
+
+        this.shape.position.x = this.position.x * 32 + this.offset.x
+        this.shape.position.y = this.position.y * 32 + this.offset.y
+    }
+
+    protected shiftPosition(d: { x: number, y: number }) {
+        console.info("Shift Position", d)
+        this.offset.x *= -(Math.abs(d.x))
+        this.offset.y *= -(Math.abs(d.y))
+        this.position.x += d.x
+        this.position.y += d.y
     }
 
     startMove(d: Direction) {
-        if (this.direction != d) {
-            this.turnTimeMS = turnTimeMS
+        if (this.state != State.Idle) {
+            // If character isn't Idle, we aren't moving
+            return
         }
-        this.direction = d
-        this.moving = true
+
+        if (this.direction != d) {
+            // We're going to turn character first
+            this.turnTimeMS = turnTimeMS
+            this.direction = d
+            this.state = State.Turning
+            return
+        }
+
+        this.state = State.Moving
+        this.moveShifted = false
+        this.moveTimeMS = 1000
     }
 
     stopMove() {
-        this.moving = false
     }
 
     protected makeShape() {
