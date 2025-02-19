@@ -80,6 +80,14 @@ export class Game {
             this.player.stopMove()
         }
     }
+
+    valueInput(name: string, value: string) {
+        switch (name) {
+            case "speed":
+                this.player.speed = parseInt(value)
+                break;
+        }
+    }
 }
 
 function drawGrid(): Pixi.Graphics {
