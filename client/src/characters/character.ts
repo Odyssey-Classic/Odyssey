@@ -31,7 +31,8 @@ export class Character {
     private moveTimeMS: number = 0
     private turnTimeMS: number = 0
 
-    private speed: number = 1
+    // Speed represents the time in milliseconds it takes to move one tile
+    public speed: number = 150
 
     public shape: Pixi.Graphics
 
@@ -56,15 +57,6 @@ export class Character {
         console.log("State Set:", s)
     }
 
-    // Start Move Called
-    // Check current direction vs new
-    // Can Move check TODO
-    // Set Moving True
-    // if (moving), when we actually start moving, flag that we need to complete our move.
-    //
-    // Graphic Position = Game Pos * 32
-    // Shapes drawn add the 16,16 to center the shape currently
-
     update(deltaMS: number) {
         switch (this.state) {
             case State.Turning:
@@ -74,22 +66,26 @@ export class Character {
 
                 if (this.turnTimeMS <= 0) {
                     this.state = State.Idle
+                    this.offset.x = 0
+                    this.offset.y = 0
                 }
                 return
             case State.Moving:
                 const d = DeltaUnit(this.direction)
 
                 this.moveTimeMS -= deltaMS
-                if (this.moveTimeMS <= 500 && !this.moveShifted) {
+                if (this.moveTimeMS <= (this.speed / 2) && !this.moveShifted) {
                     this.shiftPosition(d)
                     this.moveShifted = true
                 }
 
-                this.offset.x += (d.x * (deltaMS / 1000) * Config.size)
-                this.offset.y += (d.y * (deltaMS / 1000) * Config.size)
+                this.offset.x += (d.x * (deltaMS / this.speed) * Config.size)
+                this.offset.y += (d.y * (deltaMS / this.speed) * Config.size)
 
                 if (this.moveTimeMS <= 0) {
                     this.state = State.Idle
+                    this.offset.x = 0
+                    this.offset.y = 0
                 }
                 break
         }
@@ -122,7 +118,7 @@ export class Character {
 
         this.state = State.Moving
         this.moveShifted = false
-        this.moveTimeMS = 1000
+        this.moveTimeMS = this.speed
     }
 
     stopMove() {
