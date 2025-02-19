@@ -90,6 +90,8 @@ export class Character {
 
                 if (this.moveTimeMS <= 0) {
                     this.state = State.Idle
+                    this.offset.x = 0
+                    this.offset.y = 0
                 }
                 break
         }
