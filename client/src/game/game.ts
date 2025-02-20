@@ -98,14 +98,14 @@ function drawGrid(): Pixi.Graphics {
     })
 
     for (let c = 0; c <= 17; c++) {
-        grid.moveTo(c * Config.size, 0)
+        grid.moveTo(c * Config.tileSize, 0)
         grid.stroke(0x333333)
-        grid.lineTo(c * Config.size, Config.rows * Config.size)
+        grid.lineTo(c * Config.tileSize, Config.rows * Config.tileSize)
     }
     for (let r = 0; r <= 17; r++) {
-        grid.moveTo(0, r * Config.size)
+        grid.moveTo(0, r * Config.tileSize)
         grid.stroke(0x333333)
-        grid.lineTo(Config.size * Config.columns, r * Config.size)
+        grid.lineTo(Config.tileSize * Config.columns, r * Config.tileSize)
     }
 
     return grid
