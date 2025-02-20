@@ -7,5 +7,11 @@ window['game'] = game
 
 game.start().then(() => {
     console.log(game)
-    document.body.appendChild(game.app.canvas);
+
+    const gameView = document.getElementById("game-view")
+    if (gameView) {
+        gameView.appendChild(game.app.canvas)
+    } else {
+        document.body.appendChild(game.app.canvas)
+    }
 })
