@@ -3,6 +3,7 @@ import { Direction } from "./direction"
 import { Position } from "./position"
 import { DEG_TO_RAD } from "pixi.js"
 import { Config } from "../config/config"
+import { config } from "process"
 
 const arcs = {
     [Direction.Up]: { start: 225 * DEG_TO_RAD, end: 315 * DEG_TO_RAD, counterClockwise: false },
@@ -129,12 +130,23 @@ export class Character {
             }
         }
 
-        this.state = State.Moving
-        this.moveShifted = false
-        this.moveTimeMS = this.speed
+        if (this.canMove(this.direction)) {
+            this.state = State.Moving
+            this.moveShifted = false
+            this.moveTimeMS = this.speed
+        }
     }
 
     stopMove() {
+    }
+
+    canMove(dir: Direction) {
+        const d = DeltaUnit(dir)
+        let next: { x: number, y: number } = {
+            x: d.x + this.position.x,
+            y: d.y + this.position.y,
+        }
+        return !(next.x < 0 || next.x >= Config.columns || next.y < 0 || next.y >= Config.rows)
     }
 
     protected makeShape() {
