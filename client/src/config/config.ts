@@ -6,12 +6,5 @@ export const Config = {
      */
     rows: 17,
     columns: 17,
-    size: 32,
-
-    /**
-     * turnMS: delay before moving when changing direction.
-     * moveMS: time to move between tiles.
-     */
-    turnMS: 100,
-    moveMS: 800,
+    tileSize: 32,
 }

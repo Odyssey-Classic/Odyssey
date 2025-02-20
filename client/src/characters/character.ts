@@ -31,6 +31,8 @@ export class Character {
     private moveTimeMS: number = 0
     private turnTimeMS: number = 0
 
+    private skipTurn: number = 0
+
     // Speed represents the time in milliseconds it takes to move one tile
     public speed: number = 150
 
@@ -59,6 +61,11 @@ export class Character {
 
     update(deltaMS: number) {
         switch (this.state) {
+            case State.Idle:
+                if (this.skipTurn != 0) {
+                    this.skipTurn--
+                }
+                break
             case State.Turning:
                 if (this.turnTimeMS > 0) {
                     this.turnTimeMS -= deltaMS
@@ -69,7 +76,7 @@ export class Character {
                     this.offset.x = 0
                     this.offset.y = 0
                 }
-                return
+                break
             case State.Moving:
                 const d = DeltaUnit(this.direction)
 
@@ -79,11 +86,14 @@ export class Character {
                     this.moveShifted = true
                 }
 
-                this.offset.x += (d.x * (deltaMS / this.speed) * Config.size)
-                this.offset.y += (d.y * (deltaMS / this.speed) * Config.size)
+                this.offset.x += (d.x * (deltaMS / this.speed) * Config.tileSize)
+                this.offset.y += (d.y * (deltaMS / this.speed) * Config.tileSize)
 
                 if (this.moveTimeMS <= 0) {
                     this.state = State.Idle
+
+                    // setting this to 2, gives us a single frame to change direciton without turn delay
+                    this.skipTurn = 2
                     this.offset.x = 0
                     this.offset.y = 0
                 }
@@ -109,11 +119,14 @@ export class Character {
         }
 
         if (this.direction != d) {
-            // We're going to turn character first
-            this.turnTimeMS = turnTimeMS
             this.direction = d
-            this.state = State.Turning
-            return
+
+            if (this.skipTurn <= 0) {
+                // We're going to turn character first
+                this.turnTimeMS = turnTimeMS
+                this.state = State.Turning
+                return
+            }
         }
 
         this.state = State.Moving
@@ -126,16 +139,16 @@ export class Character {
 
     protected makeShape() {
         let center = {
-            x: Config.size / 2,
-            y: Config.size / 2,
+            x: Config.tileSize / 2,
+            y: Config.tileSize / 2,
         }
         this.shape.clear()
-        this.shape.circle(center.x, center.y, Config.size / 2)
+        this.shape.circle(center.x, center.y, Config.tileSize / 2)
         this.shape.fill(0xffffff)
 
         this.shape.moveTo(center.x, center.y)
         let arc = arcs[this.direction]
-        this.shape.arc(center.x, center.y, Config.size / 2, arc.start, arc.end, arc.counterClockwise)
+        this.shape.arc(center.x, center.y, Config.tileSize / 2, arc.start, arc.end, arc.counterClockwise)
         this.shape.fill(0x00ffff)
     }
 }
