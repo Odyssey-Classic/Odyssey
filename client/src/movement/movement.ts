@@ -1,132 +1,63 @@
-import { Direction } from "../characters/direction"
-import { Character } from "../characters/character"
-import { Config } from "../config/config"
-
-const turnTimeMS: number = 100
-
-enum State {
-    Idle = 0,
-    Turning = 1,
-    Moving = 2,
-}
+import { Direction } from "../characters/direction";
+import { Character } from "../characters/character";
+import { Config } from "../config/config";
+import { MovementState } from "./states/MovementState";
+import { IdleState } from "./states/IdleState";
 
 export class Movement {
-    private character: Character
-    private _state: State = State.Idle
-    private _direction: Direction = Direction.Right
-    public offset: { x: number, y: number } = { x: 0, y: 0 }
+    private character: Character;
+    private state: MovementState;
+    public offset: { x: number, y: number } = { x: 0, y: 0 };
+    public direction: Direction = Direction.Right;
 
-    private moveShifted: boolean = true
-    private moveTimeMS: number = 0
-    private turnTimeMS: number = 0
-    private skipTurn: number = 0
+    public moveShifted: boolean = true;
+    public moveTimeMS: number = 0;
+    public turnTimeMS: number = 0;
+    public skipTurn: number = 0;
 
-    public speed: number = 150
+    public speed: number = 150;
 
     constructor(character: Character) {
-        this.character = character
+        this.character = character;
+        this.state = new IdleState(this);
     }
 
-    get state() {
-        return this._state
+    setState(state: MovementState): void {
+        this.state = state;
     }
 
-    set state(s: State) {
-        this._state = s
+    update(deltaMS: number): void {
+        this.state.update(deltaMS);
     }
 
-    get direction() {
-        return this._direction
+    startMove(direction: Direction): void {
+        this.state.startMove(direction);
     }
 
-    set direction(d: Direction) {
-        this._direction = d
+    stopMove(): void {
+        this.state.stopMove();
     }
 
-    update(deltaMS: number) {
-        switch (this.state) {
-            case State.Idle:
-                if (this.skipTurn != 0) {
-                    this.skipTurn--
-                }
-                break
-            case State.Turning:
-                if (this.turnTimeMS > 0) {
-                    this.turnTimeMS -= deltaMS
-                }
-
-                if (this.turnTimeMS <= 0) {
-                    this.state = State.Idle
-                    this.offset.x = 0
-                    this.offset.y = 0
-                }
-                break
-            case State.Moving:
-                const d = this.deltaUnit(this.direction)
-
-                this.moveTimeMS -= deltaMS
-                if (this.moveTimeMS <= this.speed / 2 && !this.moveShifted) {
-                    this.shiftPosition(d)
-                    this.moveShifted = true
-                }
-
-                this.offset.x += d.x * (deltaMS / this.speed) * Config.tileSize
-                this.offset.y += d.y * (deltaMS / this.speed) * Config.tileSize
-
-                if (this.moveTimeMS <= 0) {
-                    this.state = State.Idle
-                    this.skipTurn = 2
-                    this.offset.x = 0
-                    this.offset.y = 0
-                }
-                break
-        }
+    shiftPosition(d: { x: number; y: number }): void {
+        this.offset.x *= -(Math.abs(d.x));
+        this.offset.y *= -(Math.abs(d.y));
+        this.character.position.x += d.x;
+        this.character.position.y += d.y;
     }
 
-    startMove(d: Direction) {
-        if (this.state != State.Idle) {
-            return
-        }
-
-        if (this.direction != d) {
-            this.direction = d
-
-            if (this.skipTurn <= 0) {
-                this.turnTimeMS = turnTimeMS
-                this.state = State.Turning
-                return
-            }
-        }
-
-        if (this.canMove(this.direction)) {
-            this.state = State.Moving
-            this.moveShifted = false
-            this.moveTimeMS = this.speed
-        }
-    }
-
-    stopMove() { }
-
-    private shiftPosition(d: { x: number; y: number }) {
-        this.offset.x *= -(Math.abs(d.x))
-        this.offset.y *= -(Math.abs(d.y))
-        this.character.position.x += d.x
-        this.character.position.y += d.y
-    }
-
-    private canMove(dir: Direction) {
-        const d = this.deltaUnit(dir)
+    canMove(dir: Direction): boolean {
+        const d = this.deltaUnit(dir);
         let next = {
             x: d.x + this.character.position.x,
             y: d.y + this.character.position.y,
-        }
-        return !(next.x < 0 || next.x >= Config.columns || next.y < 0 || next.y >= Config.rows)
+        };
+        return !(next.x < 0 || next.x >= Config.columns || next.y < 0 || next.y >= Config.rows);
     }
 
-    private deltaUnit(d: Direction): { x: number; y: number } {
+    deltaUnit(d: Direction): { x: number; y: number } {
         return {
             x: ((d - 3) % 2),
             y: ((d - 2) % 2),
-        }
+        };
     }
 }
