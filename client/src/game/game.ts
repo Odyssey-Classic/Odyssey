@@ -3,6 +3,7 @@ import { KeyboardHandler } from '../input';
 import { Character } from '../characters/character';
 import { Direction } from '../characters/direction';
 import { Config } from '../config/config';
+import { MovementInput } from '../input/movement_input';
 
 /**
  * Game is our root class for handling all game client activities.
@@ -11,6 +12,7 @@ export class Game {
     app: Pixi.Application
     keyboardInput: KeyboardHandler
     player: Character
+    movementInput: MovementInput
 
     characterLayer: Pixi.Container
 
@@ -18,23 +20,23 @@ export class Game {
         this.app = new Pixi.Application();
         this.keyboardInput = new KeyboardHandler()
         this.player = new Character()
+        this.movementInput = new MovementInput(this.player.movement)
 
         this.app.stage.addChild(drawGrid())
 
         this.player.position.x = 8
         this.player.position.y = 8
-        this.player.direction = Direction.Right
-
+        this.player.movement.direction = Direction.Right
 
         this.characterLayer = new Pixi.Container()
         this.characterLayer.isRenderGroup = true
         this.characterLayer.addChild(this.player.shape)
         this.app.stage.addChild(this.characterLayer)
-
     }
 
     async start() {
         this.keyboardInput.start()
+        this.movementInput.start()
 
         const width: number = 32 * 17
         const height: number = 32 * 17
@@ -46,45 +48,14 @@ export class Game {
     update(ticker: Pixi.Ticker) {
         let delta = ticker.deltaMS
 
-        let keys = this.keyboardInput.getKeys(true)
-        let moving: boolean = false
-        if (keys.length) {
-            keys.forEach((k) => {
-                console.info("Game Update: ", k)
-                // TODO checking more keys once a single move key is found causes
-                // them to conflict and locks character.
-                // Let's see if anyone notices this in their play tests first.
-                switch (k) {
-                    case 'KeyW':
-                        this.player.startMove(Direction.Up)
-                        moving = true
-                        break
-                    case 'KeyS':
-                        this.player.startMove(Direction.Down)
-                        moving = true
-                        break
-                    case 'KeyA':
-                        this.player.startMove(Direction.Left)
-                        moving = true
-                        break
-                    case 'KeyD':
-                        this.player.startMove(Direction.Right)
-                        moving = true
-                        break
-                }
-            })
-        }
-
+        this.movementInput.update()
         this.player.update(delta)
-        if (!moving) {
-            this.player.stopMove()
-        }
     }
 
     valueInput(name: string, value: string) {
         switch (name) {
             case "speed":
-                this.player.speed = parseInt(value)
+                this.player.movement.speed = parseInt(value)
                 break;
         }
     }
