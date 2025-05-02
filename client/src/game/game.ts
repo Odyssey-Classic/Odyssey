@@ -4,6 +4,8 @@ import { Character } from '../characters/character';
 import { Direction } from '../characters/direction';
 import { Config } from '../config/config';
 import { MovementInput } from '../input/movement_input';
+import { PlayerController } from "../controllers/player_controller"
+import { AIController } from "../controllers/ai_controller"
 
 /**
  * Game is our root class for handling all game client activities.
@@ -12,15 +14,21 @@ export class Game {
     app: Pixi.Application
     keyboardInput: KeyboardHandler
     player: Character
+    aiCharacter: Character // Add AI-controlled character
     movementInput: MovementInput
+    aiController: AIController // Add a property for the AI controller
 
     characterLayer: Pixi.Container
 
     constructor() {
         this.app = new Pixi.Application();
         this.keyboardInput = new KeyboardHandler()
+
         this.player = new Character()
         this.movementInput = new MovementInput(this.player.movement)
+
+        this.aiCharacter = new Character() // Instantiate AI-controlled character
+        this.aiController = new AIController(this.aiCharacter) // Assign AI controller
 
         this.app.stage.addChild(drawGrid())
 
@@ -28,9 +36,14 @@ export class Game {
         this.player.position.y = 8
         this.player.movement.direction = Direction.Right
 
+        this.aiCharacter.position.x = 5 // Set initial position for AI character
+        this.aiCharacter.position.y = 5
+        this.aiCharacter.movement.direction = Direction.Left
+
         this.characterLayer = new Pixi.Container()
         this.characterLayer.isRenderGroup = true
         this.characterLayer.addChild(this.player.shape)
+        this.characterLayer.addChild(this.aiCharacter.shape) // Add AI character to the layer
         this.app.stage.addChild(this.characterLayer)
     }
 
@@ -50,6 +63,7 @@ export class Game {
 
         this.movementInput.update()
         this.player.update(delta)
+        this.aiController.update(delta) // Call the AI controller's update method
     }
 
     valueInput(name: string, value: string) {
