@@ -44,6 +44,8 @@ export class Movement {
         character.position.y += d.y;
     }
 
+    // TODO: canMove can only check for map edges currently.
+    // We'll need some way to check for other barriers.
     canMove(character: Character, dir: Direction): boolean {
         const d = this.deltaUnit(dir);
         let next = {
@@ -54,6 +56,9 @@ export class Movement {
     }
 
     deltaUnit(d: Direction): { x: number; y: number } {
+        // Uses math to turn the direction enum values to unit x,y changes
+        // because I'm special and I wanted to do it this way rather than
+        // with a switch.
         return {
             x: ((d - 3) % 2),
             y: ((d - 2) % 2),
