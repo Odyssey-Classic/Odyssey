@@ -13,6 +13,6 @@ export class PlayerController implements Controller {
     }
 
     update(deltaMS: number) {
-        this.movementInput.update()
+        this.movementInput.update(this.character)
     }
 }
