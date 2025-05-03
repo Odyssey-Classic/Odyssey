@@ -61,7 +61,7 @@ export class Game {
     update(ticker: Pixi.Ticker) {
         let delta = ticker.deltaMS
 
-        this.movementInput.update()
+        this.movementInput.update(this.player)
         this.player.update(delta)
         this.aiController.update(delta) // Call the AI controller's update method
     }

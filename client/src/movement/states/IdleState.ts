@@ -3,6 +3,7 @@ import { Direction } from "../../characters/direction";
 import { MovementState } from "./MovementState";
 import { TurningState } from "./TurningState";
 import { MovingState } from "./MovingState";
+import { Character } from "../../characters/character";
 
 export class IdleState implements MovementState {
     private movement: Movement;
@@ -11,13 +12,13 @@ export class IdleState implements MovementState {
         this.movement = movement;
     }
 
-    update(deltaMS: number): void {
+    update(character: Character, deltaMS: number): void {
         if (this.movement.skipTurn > 0) {
             this.movement.skipTurn--;
         }
     }
 
-    startMove(direction: Direction): void {
+    startMove(character: Character, direction: Direction): void {
         if (this.movement.direction !== direction) {
             this.movement.direction = direction;
             if (this.movement.skipTurn <= 0) {
@@ -26,12 +27,12 @@ export class IdleState implements MovementState {
             }
         }
 
-        if (this.movement.canMove(direction)) {
+        if (this.movement.canMove(character, direction)) {
             this.movement.setState(new MovingState(this.movement));
         }
     }
 
-    stopMove(): void {
+    stopMove(character: Character): void {
         // No specific behavior for stopping in IdleState
     }
 }

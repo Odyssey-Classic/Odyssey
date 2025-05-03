@@ -1,11 +1,10 @@
 import { Direction } from "../characters/direction";
-import { Character } from "../characters/character";
 import { Config } from "../config/config";
 import { MovementState } from "./states/MovementState";
 import { IdleState } from "./states/IdleState";
+import { Character } from "../characters/character";
 
 export class Movement {
-    private character: Character;
     private state: MovementState;
     public offset: { x: number, y: number } = { x: 0, y: 0 };
     public direction: Direction = Direction.Right;
@@ -17,8 +16,7 @@ export class Movement {
 
     public speed: number = 150;
 
-    constructor(character: Character) {
-        this.character = character;
+    constructor() {
         this.state = new IdleState(this);
     }
 
@@ -26,30 +24,31 @@ export class Movement {
         this.state = state;
     }
 
-    update(deltaMS: number): void {
-        this.state.update(deltaMS);
+    update(character: Character, deltaMS: number): void {
+        this.state.update(character, deltaMS);
     }
 
-    startMove(direction: Direction): void {
-        this.state.startMove(direction);
+    startMove(character: Character, direction: Direction): void {
+        this.state.startMove(character, direction);
     }
 
-    stopMove(): void {
-        this.state.stopMove();
+    stopMove(character: Character): void {
+        this.state.stopMove(character);
     }
 
-    shiftPosition(d: { x: number; y: number }): void {
+    shiftPosition(character: Character, d: { x: number; y: number }): void {
+        // flips the offset to be relative to the next tile position
         this.offset.x *= -(Math.abs(d.x));
         this.offset.y *= -(Math.abs(d.y));
-        this.character.position.x += d.x;
-        this.character.position.y += d.y;
+        character.position.x += d.x;
+        character.position.y += d.y;
     }
 
-    canMove(dir: Direction): boolean {
+    canMove(character: Character, dir: Direction): boolean {
         const d = this.deltaUnit(dir);
         let next = {
-            x: d.x + this.character.position.x,
-            y: d.y + this.character.position.y,
+            x: d.x + character.position.x,
+            y: d.y + character.position.y,
         };
         return !(next.x < 0 || next.x >= Config.columns || next.y < 0 || next.y >= Config.rows);
     }

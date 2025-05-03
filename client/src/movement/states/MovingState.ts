@@ -3,6 +3,7 @@ import { MovementState } from "./MovementState";
 import { IdleState } from "./IdleState";
 import { Config } from "../../config/config";
 import { Direction } from "../../characters/direction";
+import { Character } from "../../characters/character";
 
 export class MovingState implements MovementState {
     private movement: Movement;
@@ -13,12 +14,12 @@ export class MovingState implements MovementState {
         this.movement.moveTimeMS = this.movement.speed;
     }
 
-    update(deltaMS: number): void {
+    update(character: Character, deltaMS: number): void {
         const d = this.movement.deltaUnit(this.movement.direction);
 
         this.movement.moveTimeMS -= deltaMS;
         if (this.movement.moveTimeMS <= this.movement.speed / 2 && !this.movement.moveShifted) {
-            this.movement.shiftPosition(d);
+            this.movement.shiftPosition(character, d);
             this.movement.moveShifted = true;
         }
 
@@ -33,11 +34,11 @@ export class MovingState implements MovementState {
         }
     }
 
-    startMove(direction: Direction): void {
+    startMove(character: Character, direction: Direction): void {
         // No specific behavior for starting a move in MovingState
     }
 
-    stopMove(): void {
+    stopMove(character: Character): void {
         // No specific behavior for stopping in MovingState
     }
 }
