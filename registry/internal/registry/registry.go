@@ -23,9 +23,16 @@ type Registry struct {
 func (r *Registry) Run(ctx context.Context) error {
 	router := chi.NewRouter()
 
+	// Add HTTP request logging middleware
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			slog.Info("[registry] HTTP request", "method", req.Method, "path", req.URL.Path, "remote", req.RemoteAddr)
+			next.ServeHTTP(w, req)
+		})
+	})
+
 	idServer := identity.New(r.PrivateKey, r.OAuthConfig, r.DB)
-	// Mount identity endpoints at /identity/*
-	router.Mount("/identity", idServer)
+	router.Mount("/identity", idServer.Router())
 
 	serversServer := &servers.ServersServer{}
 	router.Mount("/servers", idServer.AuthorizeMiddleware(serversServer))

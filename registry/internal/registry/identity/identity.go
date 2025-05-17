@@ -11,6 +11,7 @@ import (
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity/oauth"
+	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,13 +23,10 @@ type IdentityServer struct {
 	db         *data.DB
 	oAuth      *oauth2.Config
 	privateKey *ecdsa.PrivateKey
-
-	mux *http.ServeMux
+	router     chi.Router
 }
 
 func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *IdentityServer {
-	mux := http.NewServeMux()
-
 	idServer := &IdentityServer{
 		db: db,
 		oAuth: &oauth2.Config{
@@ -39,24 +37,23 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 				TokenURL: oAuth.TokenURL.String(),
 			},
 			RedirectURL: oAuth.RedirectURL.String(),
-			Scopes:      []string{},
+			Scopes:      []string{"identify", "email"},
 		},
 		privateKey: privateKey,
-		mux:        mux,
+		router:     chi.NewRouter(),
 	}
 
 	oAuthServer := oauth.New(idServer.oAuth, idServer.IdentityCallback)
 
-	mux.HandleFunc("/login", oAuthServer.OAuthRedirect)
-	mux.HandleFunc("/oauth/callback", oAuthServer.OAuthCallback)
-	mux.HandleFunc("/.well-known/jwks.json", idServer.jwksHandler)
+	idServer.router.Get("/login", oAuthServer.OAuthRedirect)
+	idServer.router.Get("/oauth/callback", oAuthServer.OAuthCallback)
+	idServer.router.Get("/.well-known/jwks.json", idServer.jwksHandler)
 
 	return idServer
 }
 
-func (s *IdentityServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	slog.InfoContext(r.Context(), "Identity Server", "path", r.URL.Path)
-	s.mux.ServeHTTP(w, r)
+func (s *IdentityServer) Router() chi.Router {
+	return s.router
 }
 
 func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (string, error) {
