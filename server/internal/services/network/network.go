@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -51,7 +52,13 @@ func (n *Network) start(ctx context.Context) {
 	for {
 		<-ctx.Done()
 		slog.Info("network shutting down")
-		server.Shutdown(ctx)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			slog.Error("network shutdown error", "err", err)
+		} else {
+			slog.Info("network shutdown complete")
+		}
 		n.shutdown()
 		return
 	}
@@ -72,6 +79,4 @@ func (n *Network) shutdown() {
 			slog.Error("error closing client", "error", err)
 		}
 	}
-
-	// TODO cleanup maps?
 }
