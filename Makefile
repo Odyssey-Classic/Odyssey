@@ -1,4 +1,4 @@
-.PHONY: clean protoc bundle build
+.PHONY: clean protoc bundle build registry
 
 SERVER_PATH = ./server
 CLIENT_PATH = ./client
@@ -26,3 +26,6 @@ host:
 	npx http-server ./client/ -c-1
 
 build: clean protoc bundle
+
+registry:
+	go run ./registry/cmd/main.go
