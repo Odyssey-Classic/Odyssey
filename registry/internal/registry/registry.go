@@ -11,6 +11,7 @@ import (
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
+	"github.com/go-chi/chi/v5"
 )
 
 type Registry struct {
@@ -20,17 +21,18 @@ type Registry struct {
 }
 
 func (r *Registry) Run(ctx context.Context) error {
-	mux := http.NewServeMux()
+	router := chi.NewRouter()
 
 	idServer := identity.New(r.PrivateKey, r.OAuthConfig, r.DB)
-	mux.Handle("/identity/", http.StripPrefix("/identity", idServer))
+	// Mount identity endpoints at /identity/*
+	router.Mount("/identity", idServer)
 
 	serversServer := &servers.ServersServer{}
-	mux.Handle("/servers", idServer.AuthorizeMiddleware(serversServer))
+	router.Mount("/servers", idServer.AuthorizeMiddleware(serversServer))
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: router,
 	}
 
 	go func() {
