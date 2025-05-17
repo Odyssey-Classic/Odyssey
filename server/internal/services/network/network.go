@@ -47,7 +47,15 @@ func (n *Network) start(ctx context.Context) {
 	server.Handler = n.wsConnect(ctx)
 	server.BaseContext = func(listener net.Listener) context.Context { return ctx }
 
-	go server.ListenAndServe()
+	// Start the server in a goroutine and capture errors
+	errCh := make(chan error, 1)
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			slog.Error("network server error", "err", err)
+		}
+		errCh <- err
+	}()
 
 	for {
 		<-ctx.Done()

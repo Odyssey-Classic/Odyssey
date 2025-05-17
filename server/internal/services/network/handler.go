@@ -18,13 +18,35 @@ func init() {
 
 func (n *Network) wsConnect(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Connection") == "" || r.Header.Get("Upgrade") != "websocket" {
+			http.Error(w, "WebSocket connection required", http.StatusBadRequest)
+			slog.Warn("non-WebSocket connection attempt", "remote_addr", r.RemoteAddr)
+			return
+		}
+
 		// Extract client metadata from JWT token
 		// Use unvalidated JWT tokens for simplicity
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			http.Error(w, "Authorization token required", http.StatusUnauthorized)
+			slog.Warn("missing authorization token", "remote_addr", r.RemoteAddr)
+			return
+		}
+		// Expecting format: "Bearer <token>"
+		const bearerPrefix = "Bearer "
+		if len(token) <= len(bearerPrefix) || token[:len(bearerPrefix)] != bearerPrefix {
+			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+			slog.Warn("invalid authorization header format", "remote_addr", r.RemoteAddr)
+			return
+		}
+		jwtToken := token[len(bearerPrefix):]
+
+		// TODO: Validate JWT token here
+		// If invalid, return http.Error and do not upgrade
 
 		conn, err := upgrader.Upgrade(w, r, nil)
-
 		if err != nil {
-			slog.Info("upgrade error:", "error", err)
+			slog.Error("upgrade error", "error", err)
 			return
 		}
 
