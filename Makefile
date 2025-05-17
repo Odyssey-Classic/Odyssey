@@ -1,4 +1,4 @@
-.PHONY: clean protoc bundle build registry
+.PHONY: clean protoc bundle build registry mongodb-run
 
 SERVER_PATH = ./server
 CLIENT_PATH = ./client
@@ -27,5 +27,19 @@ host:
 
 build: clean protoc bundle
 
-registry:
-	go run ./registry/cmd/main.go
+registry: mongodb-run
+	env $(shell grep -v '^#' ./registry/.env | xargs) go run ./registry/cmd/main.go
+
+mongodb-run:
+	@if ! docker ps --format '{{.Names}}' | grep -q '^odyssey-mongo$$'; then \
+		if docker ps -a --format '{{.Names}}' | grep -q '^odyssey-mongo$$'; then \
+			docker start odyssey-mongo; \
+		else \
+			docker run --rm -d --name odyssey-mongo -p 27017:27017 mongo:7; \
+		fi \
+	else \
+		echo "MongoDB container 'odyssey-mongo' is already running."; \
+	fi
+
+mongodb-stop:
+	docker stop odyssey-mongo

@@ -38,7 +38,7 @@ func (r *Registry) Run(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 
-		slog.InfoContext(ctx, "shutting down server")
+		slog.InfoContext(ctx, "[http] shutting down server")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
