@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -48,6 +49,7 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 
 	mux.HandleFunc("/login", oAuthServer.OAuthRedirect)
 	mux.HandleFunc("/oauth/callback", oAuthServer.OAuthCallback)
+	mux.HandleFunc("/.well-known/jwks.json", idServer.jwksHandler)
 
 	return idServer
 }
@@ -90,4 +92,22 @@ func (s *IdentityServer) GenerateJWT(id string) (string, error) {
 	})
 
 	return tok.SignedString(s.privateKey)
+}
+
+func (s *IdentityServer) jwksHandler(w http.ResponseWriter, r *http.Request) {
+	pub := s.privateKey.Public().(*ecdsa.PublicKey)
+	jwk := map[string]any{
+		"kty": "EC",
+		"crv": pub.Curve.Params().Name,
+		"x":   pub.X.Text(16),
+		"y":   pub.Y.Text(16),
+		"use": "sig",
+		"alg": "ES256",
+		"kid": "1",
+	}
+	jwks := map[string]any{
+		"keys": []any{jwk},
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(jwks)
 }
