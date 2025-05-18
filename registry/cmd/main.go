@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -31,9 +28,9 @@ func main() {
 	}
 
 	slog.Info("[registry] Connecting to database...")
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := loadOrCreateECDSAKey()
 	if err != nil {
-		slog.Error("[registry] ecdsa key generation failed", "error", err)
+		slog.Error("[registry] ecdsa key load/generation failed", "error", err)
 		os.Exit(1)
 	}
 
