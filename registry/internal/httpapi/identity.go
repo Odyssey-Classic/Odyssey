@@ -49,6 +49,7 @@ func JWKSHandler(privateKey *ecdsa.PrivateKey) http.HandlerFunc {
 }
 
 // AuthorizeMiddleware returns a middleware that validates JWTs using the provided Identity.
+// If the JWT is valid, it injects the user's subject (sub) into the request context for downstream handlers.
 func AuthorizeMiddleware(identity *identity.Identity) func(http.Handler) http.Handler {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +65,7 @@ func AuthorizeMiddleware(identity *identity.Identity) func(http.Handler) http.Ha
 				return
 			}
 
-			// Add the known user to the context
+			// Inject the user's subject (sub) into the request context for downstream handlers
 			r = r.WithContext(context.WithValue(r.Context(), UserKeyContext, sub))
 			handler.ServeHTTP(w, r)
 		})
