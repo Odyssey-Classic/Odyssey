@@ -5,10 +5,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"context"
+
 	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/identity/oauth"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"github.com/go-chi/chi/v5"
 )
+
+// UserKeyContext is the context key for the JWT user subject.
+var UserKeyContext = identity.UserKeyContext
 
 // IdentityAPI returns a chi.Router for all /identity endpoints, including JWKS.
 func IdentityAPI(idServer *identity.Identity) chi.Router {
@@ -40,5 +45,28 @@ func JWKSHandler(privateKey *ecdsa.PrivateKey) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(jwks)
+	}
+}
+
+// AuthorizeMiddleware returns a middleware that validates JWTs using the provided Identity.
+func AuthorizeMiddleware(identity *identity.Identity) func(http.Handler) http.Handler {
+	return func(handler http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token := r.Header.Get("Authorization")
+			if token == "" {
+				http.Error(w, "no token", http.StatusUnauthorized)
+				return
+			}
+
+			sub, err := identity.VerifyJWT(token)
+			if err != nil {
+				http.Error(w, "invalid token", http.StatusUnauthorized)
+				return
+			}
+
+			// Add the known user to the context
+			r = r.WithContext(context.WithValue(r.Context(), UserKeyContext, sub))
+			handler.ServeHTTP(w, r)
+		})
 	}
 }

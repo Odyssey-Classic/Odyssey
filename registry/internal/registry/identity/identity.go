@@ -78,7 +78,7 @@ func (s *Identity) GenerateJWT(id string) (string, error) {
 	return tok.SignedString(s.privateKey)
 }
 
-// Add a method to IdentityServer to expose the private key for JWKS handler
+// PrivateKey returns the ECDSA private key for this identity.
 func (s *Identity) PrivateKey() *ecdsa.PrivateKey {
 	return s.privateKey
 }
