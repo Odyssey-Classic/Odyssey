@@ -26,8 +26,31 @@ func loadConfig() config.Config {
 	return cfg
 }
 
+func checkRequiredEnvVars() {
+	required := []string{
+		"ODY_DB_CONNECTION",
+		"ODY_CLIENT_ID",
+		"ODY_CLIENT_SECRET",
+		"ODY_REDIRECT_URL",
+		"ODY_AUTHORIZATION_URL",
+		"ODY_TOKEN_URL",
+	}
+	missing := []string{}
+	for _, key := range required {
+		if v := os.Getenv(key); v == "" {
+			missing = append(missing, key)
+		}
+	}
+	if len(missing) > 0 {
+		slog.Error("[registry] Missing required environment variables", "missing", missing)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	slog.Info("[registry] Starting up...")
+
+	checkRequiredEnvVars()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
