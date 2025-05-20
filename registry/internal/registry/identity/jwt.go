@@ -12,7 +12,7 @@ type UserKey string
 
 const UserKeyContext UserKey = "jwt-user"
 
-func (s *IdentityServer) verifyJWT(token string) (string, error) {
+func (s *Identity) verifyJWT(token string) (string, error) {
 	tok, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return s.privateKey.Public(), nil
 	})
@@ -35,7 +35,7 @@ func (s *IdentityServer) verifyJWT(token string) (string, error) {
 	return sub, nil
 }
 
-func (s *IdentityServer) AuthorizeMiddleware(handler http.Handler) http.Handler {
+func (s *Identity) AuthorizeMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {

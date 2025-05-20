@@ -10,19 +10,20 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type IdentityCallbackFunc func(context.Context, string) (string, error)
+
 type OAuthServer struct {
 	Config           *oauth2.Config
-	IdentityCallback func(context.Context, string) (string, error)
+	IdentityCallback IdentityCallbackFunc
 
 	verifiers map[string]string
 }
 
-func New(config *oauth2.Config, callback func(context.Context, string) (string, error)) *OAuthServer {
+func New(config *oauth2.Config, callback IdentityCallbackFunc) *OAuthServer {
 	return &OAuthServer{
 		Config:           config,
 		IdentityCallback: callback,
-
-		verifiers: make(map[string]string, 10),
+		verifiers:        make(map[string]string, 10),
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 
 type Registry struct {
 	db             *data.DB
-	IdentityServer *identity.IdentityServer
+	IdentityServer *identity.Identity
 }
 
 // OAuthConfig returns the registry's OAuth config via the IdentityServer.

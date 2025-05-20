@@ -14,15 +14,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// IdentityServer is the root for identity logic, no HTTP routing here.
-type IdentityServer struct {
+// Identity is the root for identity logic, no HTTP routing here.
+type Identity struct {
 	db         *data.DB
 	oAuth      *oauth2.Config
 	privateKey *ecdsa.PrivateKey
 }
 
-func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *IdentityServer {
-	return &IdentityServer{
+func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *Identity {
+	return &Identity{
 		db: db,
 		oAuth: &oauth2.Config{
 			ClientID:     oAuth.ClientID,
@@ -39,11 +39,11 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 }
 
 // Expose OAuth config for HTTP layer
-func (s *IdentityServer) OAuthConfig() *oauth2.Config {
+func (s *Identity) OAuthConfig() *oauth2.Config {
 	return s.oAuth
 }
 
-func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (string, error) {
+func (s *Identity) IdentityCallback(ctx context.Context, id string) (string, error) {
 	s.newUser(ctx, id)
 
 	tok, err := s.GenerateJWT(id)
@@ -55,7 +55,7 @@ func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (strin
 	return tok, nil
 }
 
-func (s *IdentityServer) newUser(ctx context.Context, id string) {
+func (s *Identity) newUser(ctx context.Context, id string) {
 	db := s.db.Client.Database("registry").Collection("users")
 	user := User{
 		DiscordID: id,
@@ -70,7 +70,7 @@ func (s *IdentityServer) newUser(ctx context.Context, id string) {
 	}
 }
 
-func (s *IdentityServer) GenerateJWT(id string) (string, error) {
+func (s *Identity) GenerateJWT(id string) (string, error) {
 	tok := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
 		"sub": id,
 	})
@@ -79,6 +79,6 @@ func (s *IdentityServer) GenerateJWT(id string) (string, error) {
 }
 
 // Add a method to IdentityServer to expose the private key for JWKS handler
-func (s *IdentityServer) PrivateKey() *ecdsa.PrivateKey {
+func (s *Identity) PrivateKey() *ecdsa.PrivateKey {
 	return s.privateKey
 }

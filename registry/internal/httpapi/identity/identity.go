@@ -11,7 +11,7 @@ import (
 )
 
 // IdentityAPI returns a chi.Router for all /identity endpoints, including JWKS.
-func IdentityAPI(idServer *identity.IdentityServer) chi.Router {
+func IdentityAPI(idServer *identity.Identity) chi.Router {
 	router := chi.NewRouter()
 	oAuthServer := oauth.New(idServer.OAuthConfig(), idServer.IdentityCallback)
 
