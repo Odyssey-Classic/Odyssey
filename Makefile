@@ -28,7 +28,7 @@ host:
 build: clean protoc bundle
 
 registry: mongodb-run
-	env $(shell grep -v '^#' ./registry/.env | xargs) go run ./registry/cmd/main.go
+	env $(shell grep -v '^#' ./registry/.env | xargs) go run ./registry/cmd/...
 
 mongodb-run:
 	@if ! docker ps --format '{{.Names}}' | grep -q '^odyssey-mongo$$'; then \

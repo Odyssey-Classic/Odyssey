@@ -39,7 +39,7 @@ func (n *Network) wsConnect(ctx context.Context) http.HandlerFunc {
 			slog.Warn("invalid authorization header format", "remote_addr", r.RemoteAddr)
 			return
 		}
-		jwtToken := token[len(bearerPrefix):]
+		// jwtToken := token[len(bearerPrefix):]
 
 		// TODO: Validate JWT token here
 		// If invalid, return http.Error and do not upgrade

@@ -3,31 +3,26 @@ package identity
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
-	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity/oauth"
-	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/oauth2"
 )
 
-// IdentityServer is the root HTTP server for basic identity operations.
+// IdentityServer is the root for identity logic, no HTTP routing here.
 type IdentityServer struct {
 	db         *data.DB
 	oAuth      *oauth2.Config
 	privateKey *ecdsa.PrivateKey
-	router     chi.Router
 }
 
 func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *IdentityServer {
-	idServer := &IdentityServer{
+	return &IdentityServer{
 		db: db,
 		oAuth: &oauth2.Config{
 			ClientID:     oAuth.ClientID,
@@ -40,20 +35,12 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 			Scopes:      []string{"identify", "email"},
 		},
 		privateKey: privateKey,
-		router:     chi.NewRouter(),
 	}
-
-	oAuthServer := oauth.New(idServer.oAuth, idServer.IdentityCallback)
-
-	idServer.router.Get("/login", oAuthServer.OAuthRedirect)
-	idServer.router.Get("/oauth/callback", oAuthServer.OAuthCallback)
-	idServer.router.Get("/.well-known/jwks.json", idServer.jwksHandler)
-
-	return idServer
 }
 
-func (s *IdentityServer) Router() chi.Router {
-	return s.router
+// Expose OAuth config for HTTP layer
+func (s *IdentityServer) OAuthConfig() *oauth2.Config {
+	return s.oAuth
 }
 
 func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (string, error) {
@@ -91,20 +78,7 @@ func (s *IdentityServer) GenerateJWT(id string) (string, error) {
 	return tok.SignedString(s.privateKey)
 }
 
-func (s *IdentityServer) jwksHandler(w http.ResponseWriter, r *http.Request) {
-	pub := s.privateKey.Public().(*ecdsa.PublicKey)
-	jwk := map[string]any{
-		"kty": "EC",
-		"crv": pub.Curve.Params().Name,
-		"x":   pub.X.Text(16),
-		"y":   pub.Y.Text(16),
-		"use": "sig",
-		"alg": "ES256",
-		"kid": "1",
-	}
-	jwks := map[string]any{
-		"keys": []any{jwk},
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(jwks)
+// Add a method to IdentityServer to expose the private key for JWKS handler
+func (s *IdentityServer) PrivateKey() *ecdsa.PrivateKey {
+	return s.privateKey
 }

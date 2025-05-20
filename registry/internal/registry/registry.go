@@ -1,57 +1,39 @@
 package registry
 
 import (
-	"context"
 	"crypto/ecdsa"
-	"log/slog"
-	"net/http"
-	"time"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
-	"github.com/go-chi/chi/v5"
+	"golang.org/x/oauth2"
 )
 
 type Registry struct {
-	DB          *data.DB
-	OAuthConfig config.OAuthConfig
-	PrivateKey  *ecdsa.PrivateKey
+	db             *data.DB
+	IdentityServer *identity.IdentityServer
 }
 
-func (r *Registry) Run(ctx context.Context) error {
-	router := chi.NewRouter()
+// OAuthConfig returns the registry's OAuth config via the IdentityServer.
+func (r *Registry) OAuthConfig() *oauth2.Config {
+	return r.IdentityServer.OAuthConfig()
+}
 
-	// Add HTTP request logging middleware
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			slog.Info("[registry] HTTP request", "method", req.Method, "path", req.URL.Path, "remote", req.RemoteAddr)
-			next.ServeHTTP(w, req)
-		})
-	})
+// PrivateKey should not be modified after creation.
+func (r *Registry) PrivateKey() *ecdsa.PrivateKey {
+	return r.IdentityServer.PrivateKey()
+}
 
-	idServer := identity.New(r.PrivateKey, r.OAuthConfig, r.DB)
-	router.Mount("/identity", idServer.Router())
-
-	serversServer := &servers.ServersServer{}
-	router.Mount("/servers", idServer.AuthorizeMiddleware(serversServer))
-
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: router,
+func NewRegistry(db *data.DB, oauthConfig config.OAuthConfig, privateKey *ecdsa.PrivateKey) *Registry {
+	idServer := identity.New(privateKey, oauthConfig, db)
+	return &Registry{
+		db:             db,
+		IdentityServer: idServer,
 	}
+}
 
-	go func() {
-		<-ctx.Done()
-
-		slog.InfoContext(ctx, "[http] shutting down server")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		server.Shutdown(ctx)
-	}()
-
-	slog.InfoContext(ctx, "HTTP server starting", "address", server.Addr, "module", "registry")
-	return server.ListenAndServe()
+func (r *Registry) ServersService() *servers.Service {
+	// For now, create a new Service each time. You may want to store this in Registry if you want persistence.
+	return servers.NewService()
 }

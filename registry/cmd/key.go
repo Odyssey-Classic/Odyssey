@@ -13,19 +13,22 @@ import (
 
 func getKeyPath() string {
 	if envPath := os.Getenv("ODY_PRIVATE_KEY_PATH"); envPath != "" {
+		slog.Info("[registry] Using private key path", "path", envPath)
 		return envPath
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		home = "." // fallback to current dir
 	}
-	return home + "/.odyssey_registry_private_key.pem"
+	path := home + "/.odyssey_registry_private_key.pem"
+	slog.Info("[registry] Using private key", "path", path)
+	return path
 }
 
-func loadOrCreateECDSAKey() (*ecdsa.PrivateKey, error) {
-	keyFile := getKeyPath()
-	if _, err := os.Stat(keyFile); err == nil {
-		pemBytes, err := os.ReadFile(keyFile)
+// loadOrCreateECDSAKey loads an ECDSA private key from the given path, or generates and saves a new one if not found.
+func loadOrCreateECDSAKey(path string) (*ecdsa.PrivateKey, error) {
+	if _, err := os.Stat(path); err == nil {
+		pemBytes, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +43,7 @@ func loadOrCreateECDSAKey() (*ecdsa.PrivateKey, error) {
 		return key, nil
 	}
 	// Key does not exist, generate and save
-	slog.Info("[registry] No private key found, generating new ECDSA key", "path", keyFile)
+	slog.Info("[registry] No private key found, generating new ECDSA key", "path", path)
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, err
@@ -51,7 +54,7 @@ func loadOrCreateECDSAKey() (*ecdsa.PrivateKey, error) {
 	}
 	pemBlock := &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyBytes}
 	pemBytes := pem.EncodeToMemory(pemBlock)
-	if err := os.WriteFile(keyFile, pemBytes, 0600); err != nil {
+	if err := os.WriteFile(path, pemBytes, 0600); err != nil {
 		return nil, err
 	}
 	return key, nil
