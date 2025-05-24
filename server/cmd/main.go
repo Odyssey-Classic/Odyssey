@@ -25,26 +25,26 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	network := network.New()
-	adminPort := GetUint16("ADMIN_PORT", 8081)
-	metaPort := GetUint16("META_PORT", 8082)
-
-	admin := admin.New(&wg, adminPort)
-	meta := meta.New(&wg, metaPort)
-	game := game.New(&wg)
-
-	admin.Start(ctx)
-	meta.Start(ctx)
-	network.Start(ctx, &wg)
-	game.Start(ctx, network.Out)
-
 	var registryURL string
 	flag.StringVar(&registryURL, "registry", "http://local.fosteredgames.com:8080", "Registry URL")
 	flag.Parse()
 
 	host := registry.ParseAndValidateURL(registryURL)
-
 	fmt.Println(host)
+
+	adminPort := GetUint16("ADMIN_PORT", 8081)
+	admin := admin.New(&wg, adminPort)
+	admin.Start(ctx)
+
+	metaPort := GetUint16("META_PORT", 8082)
+	meta := meta.New(&wg, metaPort)
+	meta.Start(ctx)
+
+	network := network.New()
+	network.Start(ctx, &wg)
+
+	game := game.New(&wg)
+	game.Start(ctx, network.Out)
 
 	wg.Wait()
 }
