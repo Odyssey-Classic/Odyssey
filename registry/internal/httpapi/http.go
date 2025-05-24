@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -11,7 +12,7 @@ import (
 )
 
 // RunRegistryServer sets up and runs the Odyssey registry HTTP server using the Registry for business logic.
-func RunRegistryServer(ctx context.Context, reg *registry.Registry) error {
+func RunRegistryServer(ctx context.Context, reg *registry.Registry, port uint16) error {
 	router := chi.NewRouter()
 
 	// Add HTTP request logging middleware
@@ -32,7 +33,7 @@ func RunRegistryServer(ctx context.Context, reg *registry.Registry) error {
 	router.Mount("/servers", idServer.AuthorizeMiddleware(serversAPI))
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
 	}
 
@@ -46,6 +47,7 @@ func RunRegistryServer(ctx context.Context, reg *registry.Registry) error {
 		server.Shutdown(ctx)
 	}()
 
-	slog.InfoContext(ctx, "HTTP server starting", "address", server.Addr, "module", "registry")
+	slog.InfoContext(ctx, "[http] HTTP server starting", "address", server.Addr, "module", "registry")
+
 	return server.ListenAndServe()
 }

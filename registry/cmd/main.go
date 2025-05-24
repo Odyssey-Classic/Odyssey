@@ -26,39 +26,21 @@ func loadConfig() config.Config {
 	return cfg
 }
 
-func checkRequiredEnvVars() {
-	required := []string{
-		"ODY_DB_CONNECTION",
-		"ODY_CLIENT_ID",
-		"ODY_CLIENT_SECRET",
-		"ODY_REDIRECT_URL",
-		"ODY_AUTHORIZATION_URL",
-		"ODY_TOKEN_URL",
-	}
-	missing := []string{}
-	for _, key := range required {
-		if v := os.Getenv(key); v == "" {
-			missing = append(missing, key)
-		}
-	}
-	if len(missing) > 0 {
-		slog.Error("[registry] Missing required environment variables", "missing", missing)
-		os.Exit(1)
-	}
-}
-
 func main() {
-	slog.Info("[registry] Starting up...")
-
-	checkRequiredEnvVars()
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
+	slog.Info("[registry] Starting up...")
+
 	cfg := loadConfig()
 
-	keyPath := getKeyPath()
-	key, err := loadOrCreateECDSAKey(keyPath)
+	if cfg.PrivateKeyPath == "" {
+		// Since we want to default to the user's HOME we need code to determine
+		// home for various OSes.
+		cfg.PrivateKeyPath = defaultKeyPath()
+	}
+
+	key, err := loadOrCreateECDSAKey(cfg.PrivateKeyPath)
 	if err != nil {
 		slog.Error("[registry] ecdsa key load/generation failed", "error", err)
 		os.Exit(1)
@@ -74,13 +56,11 @@ func main() {
 
 	reg := registry.NewRegistry(db, cfg.OAuth, key)
 
-	slog.Info("[registry] Server starting on :8080")
-
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	var runErr error
 	go func() {
-		runErr = httpapi.RunRegistryServer(ctx, reg)
+		runErr = httpapi.RunRegistryServer(ctx, reg, cfg.ServerPort)
 		wg.Done()
 	}()
 

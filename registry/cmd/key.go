@@ -9,19 +9,15 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"path"
 )
 
-func getKeyPath() string {
-	if envPath := os.Getenv("ODY_PRIVATE_KEY_PATH"); envPath != "" {
-		slog.Info("[registry] Using private key path", "path", envPath)
-		return envPath
-	}
+func defaultKeyPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		home = "." // fallback to current dir
 	}
-	path := home + "/.odyssey_registry_private_key.pem"
-	slog.Info("[registry] Using private key", "path", path)
+	path := path.Join(home, ".odyssey_registry_private_key.pem")
 	return path
 }
 
