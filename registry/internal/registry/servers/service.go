@@ -1,16 +1,22 @@
 package servers
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
+)
 
 // Service handles business logic for server registration and management.
 type Service struct {
 	mu      sync.Mutex
 	servers map[string]ServerInfo
+	db      *data.DB
 }
 
-func NewService() *Service {
+func NewService(db *data.DB) *Service {
 	return &Service{
 		servers: make(map[string]ServerInfo),
+		db:      db,
 	}
 }
 

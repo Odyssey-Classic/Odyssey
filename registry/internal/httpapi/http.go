@@ -25,7 +25,7 @@ func RunRegistryServer(ctx context.Context, reg *registry.Registry) error {
 	router.Get("/.well-known/jwks.json", JWKSHandler(reg.PrivateKey()))
 
 	// Use the IdentityServer property directly
-	idServer := reg.IdentityServer
+	idServer := reg.IdentityService()
 	router.Mount("/identity", IdentityAPI(idServer))
 
 	serversAPI := ServersAPI(reg.ServersService())
