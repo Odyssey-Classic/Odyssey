@@ -15,8 +15,8 @@ import (
 // UserKeyContext is the context key for the JWT user subject.
 var UserKeyContext = identity.UserKeyContext
 
-// IdentityAPI returns a chi.Router for all /identity endpoints, including JWKS.
-func IdentityAPI(idServer *identity.Identity) chi.Router {
+// identityAPI returns a chi.Router for all /identity endpoints, including JWKS.
+func identityAPI(idServer *identity.Identity) chi.Router {
 	router := chi.NewRouter()
 	oAuthServer := oauth.New(idServer.OAuthConfig(), idServer.IdentityCallback)
 

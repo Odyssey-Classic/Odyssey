@@ -34,8 +34,8 @@ func (h *ServersHandlers) Register(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
 }
 
-// ServersAPI returns a chi.Router for all /servers endpoints.
-func ServersAPI(service *servers.Service) chi.Router {
+// serversAPI returns a chi.Router for all /servers endpoints.
+func serversAPI(service *servers.Service) chi.Router {
 	r := chi.NewRouter()
 	handlers := NewServersHandlers(service)
 

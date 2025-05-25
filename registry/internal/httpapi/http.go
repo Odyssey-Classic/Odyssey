@@ -11,26 +11,27 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// loggingMiddleware logs HTTP requests.
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		slog.Info("[registry] HTTP request", "method", req.Method, "path", req.URL.Path, "remote", req.RemoteAddr)
+		next.ServeHTTP(w, req)
+	})
+}
+
 // RunRegistryServer sets up and runs the Odyssey registry HTTP server using the Registry for business logic.
 func RunRegistryServer(ctx context.Context, reg *registry.Registry, port uint16) error {
 	router := chi.NewRouter()
 
-	// Add HTTP request logging middleware
-	router.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			slog.Info("[registry] HTTP request", "method", req.Method, "path", req.URL.Path, "remote", req.RemoteAddr)
-			next.ServeHTTP(w, req)
-		})
-	})
+	router.Use(loggingMiddleware)
 
 	router.Get("/.well-known/jwks.json", JWKSHandler(reg.PrivateKey()))
 
 	// Use the IdentityServer property directly
 	idServer := reg.IdentityService()
-	router.Mount("/identity", IdentityAPI(idServer))
+	router.Mount("/identity", identityAPI(reg.IdentityService()))
 
-	serversAPI := ServersAPI(reg.ServersService())
-	router.Mount("/servers", idServer.AuthorizeMiddleware(serversAPI))
+	router.Mount("/servers", idServer.AuthorizeMiddleware(serversAPI(reg.ServersService())))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
