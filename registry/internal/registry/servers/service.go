@@ -1,9 +1,13 @@
 package servers
 
 import (
+	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Service handles business logic for server registration and management.
@@ -21,10 +25,28 @@ func NewService(db *data.DB) *Service {
 }
 
 // RegisterServer registers a new game server.
-func (s *Service) RegisterServer(info ServerInfo) {
-	s.mu.Lock()
-	s.servers[info.ID] = info
-	s.mu.Unlock()
+func (s *Service) RegisterServer(ctx context.Context, name string, userID string) (APIKey, error) {
+	db := s.db.Client.Database("registry").Collection("servers")
+
+	key, hash, err := generateKey()
+	if err != nil {
+		return "", err
+	}
+
+	server := ServerInfo{
+		Key:  hash,
+		Name: name,
+		User: primitive.ObjectID.MarshalText(userID),
+	}
+
+	res, err := db.InsertOne(ctx, server, &options.InsertOneOptions{Comment: "registring new server"})
+	if err != nil {
+		return "", err
+	}
+
+	slog.Info("[servers] new server registered", "id", res.InsertedID)
+
+	return key, nil
 }
 
 // ListServers returns all registered servers.
