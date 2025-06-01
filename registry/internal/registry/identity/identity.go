@@ -70,7 +70,10 @@ func (s *Identity) newUser(ctx context.Context, id string) (*User, error) {
 	db := s.db.users
 	filter := bson.M{"discord_id": id}
 
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "lastLogin", Value: time.Now()}}}}
+	update := bson.D{
+		{Key: "$set", Value: bson.D{{Key: "lastLogin", Value: time.Now()}}},
+		{Key: "$setOnInsert", Value: bson.D{{Key: "discord_id", Value: id}}},
+	}
 	result := db.FindOneAndUpdate(ctx, filter, update, options.FindOneAndUpdate().SetUpsert(true))
 
 	user := new(User)
