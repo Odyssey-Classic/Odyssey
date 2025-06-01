@@ -5,31 +5,33 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"log/slog"
-	"net/http"
+	"time"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
-	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity/oauth"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/oauth2"
 )
 
-// IdentityServer is the root HTTP server for basic identity operations.
-type IdentityServer struct {
-	db         *data.DB
+// Identity is the root for identity logic, no HTTP routing here.
+type Identity struct {
+	db         collections
 	oAuth      *oauth2.Config
 	privateKey *ecdsa.PrivateKey
-
-	mux *http.ServeMux
 }
 
-func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *IdentityServer {
-	mux := http.NewServeMux()
+type collections struct {
+	users *mongo.Collection
+}
 
-	idServer := &IdentityServer{
-		db: db,
+func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *Identity {
+	return &Identity{
+		db: collections{
+			users: db.Client.Database("registry").Collection("users"),
+		},
 		oAuth: &oauth2.Config{
 			ClientID:     oAuth.ClientID,
 			ClientSecret: oAuth.ClientSecret,
@@ -38,29 +40,24 @@ func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *I
 				TokenURL: oAuth.TokenURL.String(),
 			},
 			RedirectURL: oAuth.RedirectURL.String(),
-			Scopes:      []string{},
+			Scopes:      []string{"identify", "email"},
 		},
 		privateKey: privateKey,
-		mux:        mux,
+	}
+}
+
+// Expose OAuth config for HTTP layer
+func (s *Identity) OAuthConfig() *oauth2.Config {
+	return s.oAuth
+}
+
+func (s *Identity) IdentityCallback(ctx context.Context, id string) (string, error) {
+	user, err := s.newUser(ctx, id)
+	if err != nil {
+		return "", err
 	}
 
-	oAuthServer := oauth.New(idServer.oAuth, idServer.IdentityCallback)
-
-	mux.HandleFunc("/login", oAuthServer.OAuthRedirect)
-	mux.HandleFunc("/oauth/callback", oAuthServer.OAuthCallback)
-
-	return idServer
-}
-
-func (s *IdentityServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	slog.InfoContext(r.Context(), "Identity Server", "path", r.URL.Path)
-	s.mux.ServeHTTP(w, r)
-}
-
-func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (string, error) {
-	s.newUser(ctx, id)
-
-	tok, err := s.GenerateJWT(id)
+	tok, err := s.GenerateJWT(user)
 	if err != nil {
 		fmt.Printf("failed to generate jwt: %v\n", err)
 		return "", err
@@ -69,25 +66,40 @@ func (s *IdentityServer) IdentityCallback(ctx context.Context, id string) (strin
 	return tok, nil
 }
 
-func (s *IdentityServer) newUser(ctx context.Context, id string) {
-	db := s.db.Client.Database("registry").Collection("users")
-	user := User{
-		DiscordID: id,
-	}
-
+func (s *Identity) newUser(ctx context.Context, id string) (*User, error) {
+	db := s.db.users
 	filter := bson.M{"discord_id": id}
 
-	result, err := db.ReplaceOne(ctx, filter, user, options.Replace().SetUpsert(true))
-	_ = result
-	if err != nil {
-		slog.Error(err.Error())
+	update := bson.D{
+		{Key: "$set", Value: bson.D{{Key: "lastLogin", Value: time.Now()}}},
+		{Key: "$setOnInsert", Value: bson.D{{Key: "discord_id", Value: id}}},
 	}
+	result := db.FindOneAndUpdate(ctx, filter, update, options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After))
+
+	user := new(User)
+	if err := result.Decode(&user); err != nil {
+		slog.Error("decoding find one and update result", "err", err.Error())
+		return nil, err
+	}
+
+	slog.Info("new user upserted", "id", user.ID)
+	return user, nil
 }
 
-func (s *IdentityServer) GenerateJWT(id string) (string, error) {
+func (s *Identity) GenerateJWT(user *User) (string, error) {
+	b, err := user.ID.MarshalText()
+	if err != nil {
+		return "", err
+	}
+
 	tok := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"sub": id,
+		"sub": string(b),
 	})
 
 	return tok.SignedString(s.privateKey)
+}
+
+// PrivateKey returns the ECDSA private key for this identity.
+func (s *Identity) PrivateKey() *ecdsa.PrivateKey {
+	return s.privateKey
 }

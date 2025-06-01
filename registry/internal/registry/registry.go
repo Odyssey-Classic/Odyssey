@@ -1,48 +1,44 @@
 package registry
 
 import (
-	"context"
 	"crypto/ecdsa"
-	"log/slog"
-	"net/http"
-	"time"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
+	"golang.org/x/oauth2"
 )
 
 type Registry struct {
-	DB          *data.DB
-	OAuthConfig config.OAuthConfig
-	PrivateKey  *ecdsa.PrivateKey
+	db       *data.DB
+	identity *identity.Identity
+	servers  *servers.Service
 }
 
-func (r *Registry) Run(ctx context.Context) error {
-	mux := http.NewServeMux()
+// OAuthConfig returns the registry's OAuth config via the IdentityServer.
+func (r *Registry) OAuthConfig() *oauth2.Config {
+	return r.identity.OAuthConfig()
+}
 
-	idServer := identity.New(r.PrivateKey, r.OAuthConfig, r.DB)
-	mux.Handle("/identity/", http.StripPrefix("/identity", idServer))
+// PrivateKey should not be modified after creation.
+func (r *Registry) PrivateKey() *ecdsa.PrivateKey {
+	return r.identity.PrivateKey()
+}
 
-	serversServer := &servers.ServersServer{}
-	mux.Handle("/servers", idServer.AuthorizeMiddleware(serversServer))
-
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+func NewRegistry(db *data.DB, oauthConfig config.OAuthConfig, privateKey *ecdsa.PrivateKey) *Registry {
+	return &Registry{
+		db:       db,
+		identity: identity.New(privateKey, oauthConfig, db),
+		servers:  servers.NewService(db),
 	}
+}
 
-	go func() {
-		<-ctx.Done()
+func (r *Registry) ServersService() *servers.Service {
+	// For now, create a new Service each time. You may want to store this in Registry if you want persistence.
+	return r.servers
+}
 
-		slog.InfoContext(ctx, "shutting down server")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		server.Shutdown(ctx)
-	}()
-
-	slog.InfoContext(ctx, "HTTP server starting", "address", server.Addr, "module", "registry")
-	return server.ListenAndServe()
+func (r *Registry) IdentityService() *identity.Identity {
+	return r.identity
 }
