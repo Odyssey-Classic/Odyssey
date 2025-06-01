@@ -2,6 +2,7 @@ package servers
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -28,7 +29,9 @@ func New(servers *servers.Service) *API {
 		router:  r,
 	}
 
-	r.Post("/register", api.register)
+	r.Post("/", api.register)
+	r.Get("/", api.listServers)
+	r.Get("/mine", api.listUserServers)
 
 	return api
 }
@@ -52,8 +55,56 @@ func (h *API) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.servers.RegisterServer(r.Context(), info.Name, user)
+	key, err := h.servers.RegisterServer(r.Context(), info.Name, user)
+	if errors.Is(err, servers.ErrServerLimitReached) {
+		http.Error(w, "max number of servers reached", http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, "registration failed", http.StatusInternalServerError)
+		slog.Error(err.Error())
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
+	json.NewEncoder(w).Encode(map[string]string{"status": "registered", "apiKey": string(key)})
+}
+
+func (a *API) listServers(w http.ResponseWriter, r *http.Request) {
+	list, err := a.servers.ListServers(r.Context())
+	if err != nil {
+		http.Error(w, "failed to list servers", http.StatusInternalServerError)
+		return
+	}
+
+	jsonList := make([]map[string]string, len(list))
+	for i, server := range list {
+		jsonList[i] = map[string]string{"id": server.ID.Hex(), "name": server.Name, "owner": server.User.Hex()}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jsonList)
+}
+
+func (a *API) listUserServers(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(identity.UserKeyContext).(*users.User)
+	if !ok {
+		http.Error(w, "unauthenticated", http.StatusForbidden)
+		slog.Error("[servers] user info missing from context")
+		return
+	}
+
+	list, err := a.servers.ListUserServers(r.Context(), user)
+	if err != nil {
+		http.Error(w, "failed to list servers", http.StatusInternalServerError)
+		return
+	}
+
+	jsonList := make([]map[string]string, len(list))
+	for i, server := range list {
+		jsonList[i] = map[string]string{"id": server.ID.Hex(), "name": server.Name, "owner": server.User.Hex()}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(jsonList)
 }
