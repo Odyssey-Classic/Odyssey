@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/identity"
+	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/servers"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry"
 	"github.com/go-chi/chi/v5"
 )
@@ -25,13 +27,12 @@ func RunRegistryServer(ctx context.Context, reg *registry.Registry, port uint16)
 
 	router.Use(loggingMiddleware)
 
-	router.Get("/.well-known/jwks.json", JWKSHandler(reg.PrivateKey()))
+	idAPI := identity.New(reg.IdentityService())
+	router.Get("/.well-known/jwks.json", idAPI.JWKSHandler())
+	router.Mount("/identity", idAPI.Router())
 
-	// Use the IdentityServer property directly
-	idServer := reg.IdentityService()
-	router.Mount("/identity", identityAPI(reg.IdentityService()))
-
-	router.Mount("/servers", idServer.AuthorizeMiddleware(serversAPI(reg.ServersService())))
+	serversAPI := servers.New(reg.ServersService())
+	router.Mount("/servers", idAPI.AuthorizeMiddleware(serversAPI.Router()))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),

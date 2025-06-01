@@ -1,25 +1,40 @@
-package httpapi
+package servers
 
 import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
 
+	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
 	"github.com/go-chi/chi/v5"
 )
 
-type ServersHandlers struct {
-	Service *servers.Service
+type API struct {
+	servers *servers.Service
+	router  chi.Router
 }
 
-func NewServersHandlers(service *servers.Service) *ServersHandlers {
-	return &ServersHandlers{Service: service}
+func (a *API) Router() chi.Router {
+	return a.router
+}
+
+func New(servers *servers.Service) *API {
+	r := chi.NewRouter()
+
+	api := &API{
+		servers: servers,
+		router:  r,
+	}
+
+	r.Post("/register", api.register)
+
+	return api
 }
 
 // Register handles POST /register for game server registration.
-func (h *ServersHandlers) Register(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(UserKeyContext).(string)
+func (h *API) register(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(identity.UserKeyContext).(string)
 	if !ok {
 		http.Error(w, "unauthenticated", http.StatusForbidden)
 		slog.Error("[servers] user info missing from context")
@@ -36,19 +51,8 @@ func (h *ServersHandlers) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Service.RegisterServer(r.Context(), info.Name, user)
+	h.servers.RegisterServer(r.Context(), info.Name, user)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"status": "registered"})
-}
-
-// serversAPI returns a chi.Router for all /servers endpoints.
-func serversAPI(service *servers.Service) chi.Router {
-	r := chi.NewRouter()
-	handlers := NewServersHandlers(service)
-
-	r.Post("/register", handlers.Register)
-	// Add more endpoints here as needed
-
-	return r
 }

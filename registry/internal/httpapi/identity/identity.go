@@ -1,4 +1,4 @@
-package httpapi
+package identity
 
 import (
 	"crypto/ecdsa"
@@ -12,11 +12,16 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type API struct {
+	identity *identity.Identity
+	router   chi.Router
+}
+
 // UserKeyContext is the context key for the JWT user subject.
 var UserKeyContext = identity.UserKeyContext
 
-// identityAPI returns a chi.Router for all /identity endpoints, including JWKS.
-func identityAPI(idServer *identity.Identity) chi.Router {
+// API returns a chi.Router for all /identity endpoints, including JWKS.
+func New(idServer *identity.Identity) *API {
 	router := chi.NewRouter()
 	oAuthServer := oauth.New(idServer.OAuthConfig(), idServer.IdentityCallback)
 
@@ -24,12 +29,22 @@ func identityAPI(idServer *identity.Identity) chi.Router {
 	router.Get("/oauth/callback", oAuthServer.OAuthCallback)
 	router.Get("/.well-known/jwks.json", JWKSHandler(idServer.PrivateKey()))
 
-	return router
+	api := &API{
+		identity: idServer,
+		router:   router,
+	}
+
+	return api
+}
+
+func (a *API) Router() chi.Router {
+	return a.router
 }
 
 // JWKSHandler returns a handler for /.well-known/jwks.json given an ECDSA private key.
-func JWKSHandler(privateKey *ecdsa.PrivateKey) http.HandlerFunc {
+func (a *API) JWKSHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		privateKey := a.identity.PrivateKey()
 		pub := privateKey.Public().(*ecdsa.PublicKey)
 		jwk := map[string]any{
 			"kty": "EC",
@@ -50,24 +65,22 @@ func JWKSHandler(privateKey *ecdsa.PrivateKey) http.HandlerFunc {
 
 // AuthorizeMiddleware returns a middleware that validates JWTs using the provided Identity.
 // If the JWT is valid, it injects the user's subject (sub) into the request context for downstream handlers.
-func AuthorizeMiddleware(identity *identity.Identity) func(http.Handler) http.Handler {
-	return func(handler http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token := r.Header.Get("Authorization")
-			if token == "" {
-				http.Error(w, "no token", http.StatusUnauthorized)
-				return
-			}
+func (a *API) AuthorizeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			http.Error(w, "no token", http.StatusUnauthorized)
+			return
+		}
 
-			sub, err := identity.VerifyJWT(token)
-			if err != nil {
-				http.Error(w, "invalid token", http.StatusUnauthorized)
-				return
-			}
+		sub, err := a.identity.VerifyJWT(token)
+		if err != nil {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
 
-			// Inject the user's subject (sub) into the request context for downstream handlers
-			r = r.WithContext(context.WithValue(r.Context(), UserKeyContext, sub))
-			handler.ServeHTTP(w, r)
-		})
-	}
+		// Inject the user's subject (sub) into the request context for downstream handlers
+		r = r.WithContext(context.WithValue(r.Context(), UserKeyContext, sub))
+		next.ServeHTTP(w, r)
+	})
 }
