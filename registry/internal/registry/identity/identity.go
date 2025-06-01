@@ -74,7 +74,7 @@ func (s *Identity) newUser(ctx context.Context, id string) (*User, error) {
 		{Key: "$set", Value: bson.D{{Key: "lastLogin", Value: time.Now()}}},
 		{Key: "$setOnInsert", Value: bson.D{{Key: "discord_id", Value: id}}},
 	}
-	result := db.FindOneAndUpdate(ctx, filter, update, options.FindOneAndUpdate().SetUpsert(true))
+	result := db.FindOneAndUpdate(ctx, filter, update, options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After))
 
 	user := new(User)
 	if err := result.Decode(&user); err != nil {
