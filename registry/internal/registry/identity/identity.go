@@ -11,20 +11,27 @@ import (
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/oauth2"
 )
 
 // Identity is the root for identity logic, no HTTP routing here.
 type Identity struct {
-	db         *data.DB
+	db         collections
 	oAuth      *oauth2.Config
 	privateKey *ecdsa.PrivateKey
 }
 
+type collections struct {
+	users *mongo.Collection
+}
+
 func New(privateKey *ecdsa.PrivateKey, oAuth config.OAuthConfig, db *data.DB) *Identity {
 	return &Identity{
-		db: db,
+		db: collections{
+			users: db.Client.Database("registry").Collection("users"),
+		},
 		oAuth: &oauth2.Config{
 			ClientID:     oAuth.ClientID,
 			ClientSecret: oAuth.ClientSecret,
@@ -60,7 +67,7 @@ func (s *Identity) IdentityCallback(ctx context.Context, id string) (string, err
 }
 
 func (s *Identity) newUser(ctx context.Context, id string) (*User, error) {
-	db := s.db.Client.Database("registry").Collection("users")
+	db := s.db.users
 	filter := bson.M{"discord_id": id}
 
 	update := bson.D{{Key: "$set", Value: bson.D{{Key: "lastLogin", Value: time.Now()}}}}

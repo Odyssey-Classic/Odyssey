@@ -3,6 +3,7 @@ package identity
 import (
 	"crypto/ecdsa"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"context"
@@ -63,23 +64,32 @@ func (a *API) JWKSHandler() http.HandlerFunc {
 }
 
 // AuthorizeMiddleware returns a middleware that validates JWTs using the provided Identity.
-// If the JWT is valid, it injects the user's subject (sub) into the request context for downstream handlers.
+// If the JWT is valid, it injects the user into the request context for downstream handlers.
 func (a *API) AuthorizeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {
 			http.Error(w, "no token", http.StatusUnauthorized)
+			slog.Error("[auth] missing token")
 			return
 		}
 
 		sub, err := a.identity.VerifyJWT(token)
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
+			slog.Error("[auth] invalid token", "token", token, "error", err)
 			return
 		}
 
-		// Inject the user's subject (sub) into the request context for downstream handlers
-		r = r.WithContext(context.WithValue(r.Context(), UserKeyContext, sub))
+		user, err := a.identity.GetUser(r.Context(), sub)
+		if err != nil {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			slog.Error("[auth] user not found", "sub", sub, "error", err)
+			return
+		}
+
+		// Inject the user into the request context for downstream handlers
+		r = r.WithContext(context.WithValue(r.Context(), UserKeyContext, user))
 		next.ServeHTTP(w, r)
 	})
 }

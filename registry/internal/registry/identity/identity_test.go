@@ -49,7 +49,7 @@ func (suite *IdentityTestSuite) SetupSuite() {
 	})
 	suite.Require().NoError(err)
 	suite.MongoClient = client
-	suite.Identity = &Identity{db: &data.DB{Client: client}}
+	suite.Identity = &Identity{db: collections{users: data.DB{Client: client}.Client.Database("registry").Collection("users")}}
 }
 
 func (suite *IdentityTestSuite) TearDownSuite() {

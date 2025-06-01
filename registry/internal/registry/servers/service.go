@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -25,7 +25,7 @@ func NewService(db *data.DB) *Service {
 }
 
 // RegisterServer registers a new game server.
-func (s *Service) RegisterServer(ctx context.Context, name string, userID string) (APIKey, error) {
+func (s *Service) RegisterServer(ctx context.Context, name string, user *identity.User) (APIKey, error) {
 	db := s.db.Client.Database("registry").Collection("servers")
 
 	key, hash, err := generateKey()
@@ -36,7 +36,7 @@ func (s *Service) RegisterServer(ctx context.Context, name string, userID string
 	server := ServerInfo{
 		Key:  hash,
 		Name: name,
-		User: primitive.ObjectID.MarshalText(userID),
+		User: user.ID,
 	}
 
 	res, err := db.InsertOne(ctx, server, &options.InsertOneOptions{Comment: "registring new server"})

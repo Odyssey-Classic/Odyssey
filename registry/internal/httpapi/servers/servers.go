@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/identity"
+	users "github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
 	"github.com/go-chi/chi/v5"
 )
@@ -34,7 +35,7 @@ func New(servers *servers.Service) *API {
 
 // Register handles POST /register for game server registration.
 func (h *API) register(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(identity.UserKeyContext).(string)
+	user, ok := r.Context().Value(identity.UserKeyContext).(*users.User)
 	if !ok {
 		http.Error(w, "unauthenticated", http.StatusForbidden)
 		slog.Error("[servers] user info missing from context")
