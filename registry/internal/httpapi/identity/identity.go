@@ -23,16 +23,15 @@ var UserKeyContext = identity.UserKeyContext
 // API returns a chi.Router for all /identity endpoints, including JWKS.
 func New(idServer *identity.Identity) *API {
 	router := chi.NewRouter()
-	oAuthServer := oauth.New(idServer.OAuthConfig(), idServer.IdentityCallback)
-
-	router.Get("/login", oAuthServer.OAuthRedirect)
-	router.Get("/oauth/callback", oAuthServer.OAuthCallback)
-	router.Get("/.well-known/jwks.json", JWKSHandler(idServer.PrivateKey()))
-
 	api := &API{
 		identity: idServer,
 		router:   router,
 	}
+
+	oAuthServer := oauth.New(idServer.OAuthConfig(), idServer.IdentityCallback)
+
+	router.Get("/login", oAuthServer.OAuthRedirect)
+	router.Get("/oauth/callback", oAuthServer.OAuthCallback)
 
 	return api
 }

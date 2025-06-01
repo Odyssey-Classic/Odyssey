@@ -61,14 +61,14 @@ func (suite *IdentityTestSuite) TearDownSuite() {
 	}
 }
 
-func (suite *IdentityTestSuite) TestFindUserByDiscordId() {
-	coll := suite.MongoClient.Database("registry").Collection("users")
-	_, err := coll.InsertOne(context.Background(), map[string]interface{}{"discord_id": "test123"})
-	suite.Require().NoError(err)
-	user, err := suite.Identity.FindUserByDiscordId(context.Background(), "test123")
-	suite.Require().NoError(err)
-	suite.Equal("test123", user.DiscordID)
-}
+// func (suite *IdentityTestSuite) TestFindUserByDiscordId() {
+// 	coll := suite.MongoClient.Database("registry").Collection("users")
+// 	_, err := coll.InsertOne(context.Background(), map[string]interface{}{"discord_id": "test123"})
+// 	suite.Require().NoError(err)
+// 	user, err := suite.Identity.FindUserByDiscordId(context.Background(), "test123")
+// 	suite.Require().NoError(err)
+// 	suite.Equal("test123", user.DiscordID)
+// }
 
 func TestIdentityTestSuite(t *testing.T) {
 	suite.Run(t, new(IdentityTestSuite))

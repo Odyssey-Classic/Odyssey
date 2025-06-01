@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/config"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
@@ -44,9 +45,12 @@ func (s *Identity) OAuthConfig() *oauth2.Config {
 }
 
 func (s *Identity) IdentityCallback(ctx context.Context, id string) (string, error) {
-	s.newUser(ctx, id)
+	user, err := s.newUser(ctx, id)
+	if err != nil {
+		return "", err
+	}
 
-	tok, err := s.GenerateJWT(id)
+	tok, err := s.GenerateJWT(user)
 	if err != nil {
 		fmt.Printf("failed to generate jwt: %v\n", err)
 		return "", err
@@ -55,24 +59,31 @@ func (s *Identity) IdentityCallback(ctx context.Context, id string) (string, err
 	return tok, nil
 }
 
-func (s *Identity) newUser(ctx context.Context, id string) {
+func (s *Identity) newUser(ctx context.Context, id string) (*User, error) {
 	db := s.db.Client.Database("registry").Collection("users")
-	user := User{
-		DiscordID: id,
-	}
-
 	filter := bson.M{"discord_id": id}
 
-	result, err := db.ReplaceOne(ctx, filter, user, options.Replace().SetUpsert(true))
-	_ = result
-	if err != nil {
-		slog.Error(err.Error())
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "lastLogin", Value: time.Now()}}}}
+	result := db.FindOneAndUpdate(ctx, filter, update, options.FindOneAndUpdate().SetUpsert(true))
+
+	user := new(User)
+	if err := result.Decode(&user); err != nil {
+		slog.Error("decoding find one and update result", "err", err.Error())
+		return nil, err
 	}
+
+	slog.Info("new user upserted", "id", user.ID)
+	return user, nil
 }
 
-func (s *Identity) GenerateJWT(id string) (string, error) {
+func (s *Identity) GenerateJWT(user *User) (string, error) {
+	b, err := user.ID.MarshalText()
+	if err != nil {
+		return "", err
+	}
+
 	tok := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"sub": id,
+		"sub": string(b),
 	})
 
 	return tok.SignedString(s.privateKey)
