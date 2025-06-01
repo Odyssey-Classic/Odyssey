@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -36,4 +37,9 @@ func (db *DB) init() {
 
 func (d *DB) Close(ctx context.Context) error {
 	return d.Client.Disconnect(ctx)
+}
+
+func IDToString(id primitive.ObjectID) (string, error) {
+	b, err := id.MarshalText()
+	return string(b), err
 }
