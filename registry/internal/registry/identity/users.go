@@ -20,7 +20,7 @@ func (s *Identity) GetUser(ctx context.Context, id string) (*User, error) {
 	}
 
 	filter := bson.D{{Key: "_id", Value: objectID}}
-	err = s.db.users.FindOne(ctx, filter).Decode(&user)
+	err = s.db.users.FindOne(ctx, filter).Decode(user)
 	if err != nil {
 		return nil, err
 	}
