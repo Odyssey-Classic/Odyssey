@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -25,23 +24,23 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	var registryURL string
-	flag.StringVar(&registryURL, "registry", "http://local.fosteredgames.com:8080", "Registry URL")
-	flag.Parse()
+	cfg, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		os.Exit(1)
+	}
 
-	host := registry.ParseAndValidateURL(registryURL)
+	host := registry.ParseAndValidateURL(cfg.RegistryURL)
 	fmt.Println(host)
 
-	adminPort := GetUint16("ADMIN_PORT", 8081)
-	admin := admin.New(&wg, adminPort)
+	admin := admin.New(&wg, uint16(cfg.AdminPort))
 	admin.Start(ctx)
 
-	metaPort := GetUint16("META_PORT", 8082)
-	meta := meta.New(&wg, metaPort)
+	meta := meta.New(&wg, uint16(cfg.MetaPort))
 	meta.Start(ctx)
 
-	network := network.New()
-	network.Start(ctx, &wg)
+	network := network.New(&wg, uint16(cfg.NetworkPort))
+	network.Start(ctx)
 
 	game := game.New(&wg)
 	game.Start(ctx, network.Out)
