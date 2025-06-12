@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Service handles business logic for server registration and management.
@@ -73,6 +74,14 @@ func (s *Service) ListServers(ctx context.Context) ([]ServerInfo, error) {
 
 func (s *Service) ListUserServers(ctx context.Context, user *identity.User) ([]ServerInfo, error) {
 	return s.getServers(ctx, bson.D{{Key: "user", Value: user.ID}})
+}
+
+func (s *Service) FindByKey(ctx context.Context, key string) ([]ServerInfo, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(key), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	return s.getServers(ctx, bson.D{{Key: "Key", Value: hash}})
 }
 
 func (s *Service) getServers(ctx context.Context, filter bson.D) ([]ServerInfo, error) {

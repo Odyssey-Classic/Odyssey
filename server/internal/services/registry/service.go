@@ -23,6 +23,7 @@ func (r *Registry) Start(ctx context.Context) error {
 }
 
 func (r *Registry) start(ctx context.Context) {
+	var err error
 	for {
 		select {
 		case <-ctx.Done():
@@ -30,6 +31,10 @@ func (r *Registry) start(ctx context.Context) {
 			return
 		default:
 			time.Sleep(5 * time.Second)
+			err = r.Ping(ctx)
+			if err != nil {
+				slog.Error("[registry] error pinging", "error", err)
+			}
 		}
 	}
 }

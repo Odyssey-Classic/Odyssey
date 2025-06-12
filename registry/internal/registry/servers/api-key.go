@@ -17,10 +17,19 @@ func generateKey() (APIKey, string, error) {
 	}
 	key := APIKey(base32.StdEncoding.EncodeToString(b))
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(key), bcrypt.DefaultCost)
+	hash, err := hashKey(key)
 	if err != nil {
 		return "", "", err
 	}
 
 	return key, string(hash), nil
+}
+
+func hashKey(key APIKey) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(key), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hash), nil
 }
