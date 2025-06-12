@@ -24,7 +24,7 @@ type Network struct {
 	port    uint16
 }
 
-func New(port uint16, wg *sync.WaitGroup) *Network {
+func New(wg *sync.WaitGroup, port uint16) *Network {
 	return &Network{
 		clientGroup: new(sync.WaitGroup),
 		wg:          wg,

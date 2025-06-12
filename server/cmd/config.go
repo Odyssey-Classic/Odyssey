@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"net/url"
+
 	"github.com/caarlos0/env"
 )
 
@@ -18,4 +21,16 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+// ParseAndValidateURL parses and validates the registry URL.
+func ParseAndValidateURL(registry string) *url.URL {
+	host, err := url.Parse(registry)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if host.Scheme == "" || host.Host == "" {
+		log.Fatalf("Invalid registry URL: %s", registry)
+	}
+	return host
 }
