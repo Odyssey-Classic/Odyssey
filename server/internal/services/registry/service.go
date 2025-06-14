@@ -23,6 +23,7 @@ func (r *Registry) Start(ctx context.Context) error {
 }
 
 func (r *Registry) start(ctx context.Context) {
+	slog.Info("[registry] service starting")
 	var err error
 	for {
 		select {

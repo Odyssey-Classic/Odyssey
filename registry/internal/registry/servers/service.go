@@ -9,6 +9,7 @@ import (
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/data"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/identity"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
@@ -31,7 +32,7 @@ func NewService(db *data.DB) *Service {
 var ErrServerLimitReached = errors.New("user has reached the server limit")
 
 // RegisterServer registers a new game server.
-func (s *Service) RegisterServer(ctx context.Context, name string, user *identity.User) (APIKey, error) {
+func (s *Service) RegisterServer(ctx context.Context, name string, user *identity.User) (string, APIKey, error) {
 	db := s.db.Client.Database("registry").Collection("servers")
 
 	var result bson.M
@@ -43,12 +44,12 @@ func (s *Service) RegisterServer(ctx context.Context, name string, user *identit
 		if err == nil {
 			err = ErrServerLimitReached
 		}
-		return "", err
+		return "", "", err
 	}
 
 	key, hash, err := generateKey()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	server := ServerInfo{
@@ -59,12 +60,17 @@ func (s *Service) RegisterServer(ctx context.Context, name string, user *identit
 
 	res, err := db.InsertOne(ctx, server, &options.InsertOneOptions{Comment: "registring new server"})
 	if err != nil {
-		return "", err
+		return "", "", err
+	}
+
+	id, ok := res.InsertedID.(string)
+	if !ok {
+		return "", "", errors.New("unable to convert inserted ID to string")
 	}
 
 	slog.Info("[servers] new server registered", "id", res.InsertedID)
 
-	return key, nil
+	return id, key, nil
 }
 
 // ListServers returns all registered servers.
@@ -74,6 +80,14 @@ func (s *Service) ListServers(ctx context.Context) ([]ServerInfo, error) {
 
 func (s *Service) ListUserServers(ctx context.Context, user *identity.User) ([]ServerInfo, error) {
 	return s.getServers(ctx, bson.D{{Key: "user", Value: user.ID}})
+}
+
+func (s *Service) FindByID(ctx context.Context, id string) ([]ServerInfo, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	return s.getServers(ctx, bson.D{{Key: "_id", Value: objID}})
 }
 
 func (s *Service) FindByKey(ctx context.Context, key string) ([]ServerInfo, error) {

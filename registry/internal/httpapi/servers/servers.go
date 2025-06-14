@@ -55,7 +55,7 @@ func (h *API) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, err := h.servers.RegisterServer(r.Context(), info.Name, user)
+	id, key, err := h.servers.RegisterServer(r.Context(), info.Name, user)
 	if errors.Is(err, servers.ErrServerLimitReached) {
 		http.Error(w, "max number of servers reached", http.StatusBadRequest)
 		return
@@ -67,7 +67,7 @@ func (h *API) register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"status": "registered", "apiKey": string(key)})
+	json.NewEncoder(w).Encode(map[string]string{"id": id, "status": "registered", "apiKey": string(key)})
 }
 
 func (a *API) listServers(w http.ResponseWriter, r *http.Request) {
