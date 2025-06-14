@@ -47,30 +47,57 @@ func (s *Service) RegisterServer(ctx context.Context, name string, user *identit
 		return "", "", err
 	}
 
-	key, hash, err := generateKey()
-	if err != nil {
-		return "", "", err
-	}
-
 	server := ServerInfo{
-		Key:  hash,
+		Key:  "",
 		Name: name,
 		User: user.ID,
 	}
 
-	res, err := db.InsertOne(ctx, server, &options.InsertOneOptions{Comment: "registring new server"})
+	res, err := db.InsertOne(ctx, server, &options.InsertOneOptions{Comment: "registering new server"})
 	if err != nil {
 		return "", "", err
 	}
 
-	id, ok := res.InsertedID.(string)
+	idObj, ok := res.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return "", "", errors.New("unable to convert inserted ID to string")
+		return "", "", errors.New("unable to convert inserted ID to ObjectID")
+	}
+	id := idObj.Hex()
+
+	// Now generate and set the API key
+	key, err := s.ResetAPIKey(ctx, id)
+	if err != nil {
+		return "", "", err
 	}
 
 	slog.Info("[servers] new server registered", "id", res.InsertedID)
 
 	return id, key, nil
+}
+
+func (s *Service) ResetAPIKey(ctx context.Context, id string) (APIKey, error) {
+	db := s.db.Client.Database("registry").Collection("servers")
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return "", err
+	}
+
+	key, hash, err := generateKey()
+	if err != nil {
+		return "", err
+	}
+
+	update := bson.D{{Key: "$set", Value: bson.D{{Key: "Key", Value: hash}}}}
+	res, err := db.UpdateOne(ctx, bson.D{{Key: "_id", Value: objID}}, update)
+	if err != nil {
+		return "", err
+	}
+	if res.MatchedCount == 0 {
+		return "", errors.New("server not found")
+	}
+
+	slog.Info("[servers] API key reset", "id", id)
+	return key, nil
 }
 
 // ListServers returns all registered servers.
