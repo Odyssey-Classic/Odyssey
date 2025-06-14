@@ -32,6 +32,7 @@ func New(servers *servers.Service) *API {
 	r.Post("/", api.register)
 	r.Get("/", api.listServers)
 	r.Get("/mine", api.listUserServers)
+	r.Post("/{serverID}/reset", api.resetAPIKey)
 
 	return api
 }
@@ -107,4 +108,42 @@ func (a *API) listUserServers(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(jsonList)
+}
+
+func (a *API) resetAPIKey(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(identity.UserKeyContext).(*users.User)
+	if !ok {
+		http.Error(w, "unauthenticated", http.StatusForbidden)
+		slog.Error("[servers] user info missing from context")
+		return
+	}
+
+	serverID := chi.URLParam(r, "serverID")
+	if serverID == "" {
+		http.Error(w, "missing server ID", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch the server and check ownership
+	servers, err := a.servers.FindByID(r.Context(), serverID)
+	if err != nil {
+		http.Error(w, "server not found", http.StatusNotFound)
+		slog.Error("/reset, server not found", "id", serverID)
+		return
+	}
+	server := servers[0]
+	if server.User.Hex() != user.ID.Hex() {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	key, err := a.servers.ResetAPIKey(r.Context(), serverID)
+	if err != nil {
+		http.Error(w, "failed to reset API key", http.StatusInternalServerError)
+		slog.Error(err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"id": server.ID.Hex(), "apiKey": string(key)})
 }
