@@ -31,19 +31,26 @@ func NewService(db *data.DB) *Service {
 
 var ErrServerLimitReached = errors.New("user has reached the server limit")
 
-// RegisterServer registers a new game server.
-func (s *Service) RegisterServer(ctx context.Context, name string, user *identity.User) (string, APIKey, error) {
-	db := s.db.Client.Database("registry").Collection("servers")
-
+// canRegisterServer checks if the user is allowed to register a new server.
+func canRegisterServer(ctx context.Context, db *mongo.Collection, user *identity.User) error {
 	var result bson.M
 	err := db.FindOne(ctx, bson.D{{Key: "user", Value: user.ID}}).Decode(&result)
-
 	// If we find one, or there's an error.
 	// Naive way to limit users to one server.
 	if !errors.Is(err, mongo.ErrNoDocuments) {
 		if err == nil {
-			err = ErrServerLimitReached
+			return ErrServerLimitReached
 		}
+		return err
+	}
+	return nil
+}
+
+// RegisterServer registers a new game server.
+func (s *Service) RegisterServer(ctx context.Context, name string, user *identity.User) (string, APIKey, error) {
+	db := s.db.Client.Database("registry").Collection("servers")
+
+	if err := canRegisterServer(ctx, db, user); err != nil {
 		return "", "", err
 	}
 
