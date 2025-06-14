@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type ServiceTestSuite struct {
+type ServersTestSuite struct {
 	suite.Suite
 	MongoClient *mongo.Client
 	Service     *Service
@@ -20,7 +20,7 @@ type ServiceTestSuite struct {
 	Pool        *dockertest.Pool
 }
 
-func (suite *ServiceTestSuite) SetupSuite() {
+func (suite *ServersTestSuite) SetupSuite() {
 	pool, err := dockertest.NewPool("")
 	suite.Require().NoError(err)
 	suite.Pool = pool
@@ -52,7 +52,7 @@ func (suite *ServiceTestSuite) SetupSuite() {
 	suite.Service = NewService(db)
 }
 
-func (suite *ServiceTestSuite) TearDownSuite() {
+func (suite *ServersTestSuite) TearDownSuite() {
 	if suite.MongoClient != nil {
 		_ = suite.MongoClient.Disconnect(context.Background())
 	}
@@ -61,7 +61,7 @@ func (suite *ServiceTestSuite) TearDownSuite() {
 	}
 }
 
-func (suite *ServiceTestSuite) TestFindByID() {
+func (suite *ServersTestSuite) TestFindByID() {
 	ctx := context.Background()
 	// Insert a server directly into the servers collection
 	coll := suite.MongoClient.Database("registry").Collection("servers")
@@ -89,5 +89,5 @@ func (suite *ServiceTestSuite) TestFindByID() {
 }
 
 func TestServiceTestSuite(t *testing.T) {
-	suite.Run(t, new(ServiceTestSuite))
+	suite.Run(t, new(ServersTestSuite))
 }
