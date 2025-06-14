@@ -39,7 +39,7 @@ func main() {
 	}
 
 	url := ParseAndValidateURL(cfg.RegistryURL)
-	reg := registry.New(&wg, url, cfg.APIKey)
+	reg := registry.New(&wg, url, cfg.ServerID, cfg.APIKey)
 	if err := reg.Start(ctx); err != nil {
 		slog.Error("unable to start registry service", "error", err)
 		os.Exit(ExitRegistryError)

@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"net/url"
 	"sync"
@@ -15,10 +16,11 @@ type Registry struct {
 	wg   *sync.WaitGroup
 }
 
-func New(wg *sync.WaitGroup, url *url.URL, apiKey string) *Registry {
+func New(wg *sync.WaitGroup, url *url.URL, id string, apiKey string) *Registry {
+	auth := base64.StdEncoding.EncodeToString([]byte(id + ":" + apiKey))
 	rt := &HeaderRoundTripper{
 		Headers: map[string]string{
-			"Authorization": apiKey,
+			"Authorization": "Basic " + auth,
 		},
 	}
 	client := &http.Client{Transport: rt}
