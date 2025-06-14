@@ -1,12 +1,19 @@
 package server
 
 import (
-	"log/slog"
+	"encoding/base64"
 	"net/http"
+	"strings"
+
+	"errors"
+	"log/slog"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/crypto/bcrypt"
 )
+
+var ErrUnauthorized = errors.New("unauthorized")
 
 type API struct {
 	servers *servers.Service
@@ -42,6 +49,26 @@ func (h *API) ping(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *API) getServer(r *http.Request) ([]servers.ServerInfo, error) {
-	key := r.Header.Get("Authorization")
-	return h.servers.FindByKey(r.Context(), key)
+	auth := r.Header.Get("Authorization")
+	if !strings.HasPrefix(auth, "Basic ") {
+		return nil, ErrUnauthorized
+	}
+	payload, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(auth, "Basic "))
+	if err != nil {
+		return nil, err
+	}
+	parts := strings.SplitN(string(payload), ":", 2)
+	if len(parts) != 2 {
+		return nil, ErrUnauthorized
+	}
+	id, key := parts[0], parts[1]
+	serversList, err := h.servers.FindByID(r.Context(), id)
+	if err != nil || len(serversList) == 0 {
+		return nil, ErrUnauthorized
+	}
+	server := serversList[0]
+	if err := bcrypt.CompareHashAndPassword([]byte(server.Key), []byte(key)); err != nil {
+		return nil, ErrUnauthorized
+	}
+	return []servers.ServerInfo{server}, nil
 }
