@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -15,34 +16,42 @@ type ClientMap map[*websocket.Conn]*Client
 
 type Network struct {
 	clientGroup *sync.WaitGroup
+	wg          *sync.WaitGroup
+	once        sync.Once
 
 	Out     chan any
 	clients ClientMap
+	port    uint16
 }
 
-func New() *Network {
+func New(wg *sync.WaitGroup, port uint16) *Network {
 	return &Network{
 		clientGroup: new(sync.WaitGroup),
+		wg:          wg,
+
+		clients: make(ClientMap),
+		Out:     make(chan any, 10),
+		port:    port,
 	}
 }
 
-func (n *Network) Start(ctx context.Context, wg *sync.WaitGroup) chan any {
-	wg.Add(1)
-	n.clients = make(ClientMap)
-	n.Out = make(chan any, 10)
-	go func() {
-		n.start(ctx)
-		close(n.Out)
-		n.clientGroup.Wait()
-		wg.Done()
-	}()
+func (n *Network) Start(ctx context.Context) chan any {
+	n.once.Do(func() {
+		n.wg.Add(1)
+		go func() {
+			n.start(ctx)
+			defer close(n.Out)
+			n.clientGroup.Wait()
+			n.wg.Done()
+		}()
+	})
 
 	return n.Out
 }
 
 func (n *Network) start(ctx context.Context) {
 	server := &http.Server{
-		Addr: ":3001",
+		Addr: fmt.Sprintf(":%d", n.port),
 	}
 	server.Handler = n.wsConnect(ctx)
 	server.BaseContext = func(listener net.Listener) context.Context { return ctx }

@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -17,6 +17,13 @@ import (
 	"github.com/Odyssey-Classic/Odyssey/server/pb"
 )
 
+const (
+	ExitSuccess       = 0
+	ExitConfigError   = 1
+	ExitRegistryError = 2
+	ExitUnknownError  = 255
+)
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
@@ -25,26 +32,31 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	var registryURL string
-	flag.StringVar(&registryURL, "registry", "http://local.fosteredgames.com:8080", "Registry URL")
-	flag.Parse()
+	cfg, err := LoadConfig()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+		os.Exit(ExitConfigError)
+	}
 
-	host := registry.ParseAndValidateURL(registryURL)
-	fmt.Println(host)
+	url := ParseAndValidateURL(cfg.RegistryURL)
+	reg := registry.New(&wg, url, cfg.ServerID, cfg.APIKey)
+	if err := reg.Start(ctx); err != nil {
+		slog.Error("unable to start registry service", "error", err)
+		os.Exit(ExitRegistryError)
+	}
 
-	adminPort := GetUint16("ADMIN_PORT", 8081)
-	admin := admin.New(&wg, adminPort)
+	admin := admin.New(&wg, uint16(cfg.AdminPort))
 	admin.Start(ctx)
 
-	metaPort := GetUint16("META_PORT", 8082)
-	meta := meta.New(&wg, metaPort)
+	meta := meta.New(&wg, uint16(cfg.MetaPort))
 	meta.Start(ctx)
 
-	network := network.New()
-	network.Start(ctx, &wg)
+	network := network.New(&wg, uint16(cfg.NetworkPort))
+	network.Start(ctx)
 
 	game := game.New(&wg)
 	game.Start(ctx, network.Out)
 
 	wg.Wait()
+	os.Exit(ExitSuccess)
 }

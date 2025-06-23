@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/identity"
+	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/server"
 	"github.com/FosteredGames/Odyssey/registry/internal/httpapi/servers"
 	"github.com/FosteredGames/Odyssey/registry/internal/registry"
 	"github.com/go-chi/chi/v5"
@@ -33,6 +34,9 @@ func RunRegistryServer(ctx context.Context, reg *registry.Registry, port uint16)
 
 	serversAPI := servers.New(reg.ServersService())
 	router.Mount("/servers", idAPI.AuthorizeMiddleware(serversAPI.Router()))
+
+	serverAPI := server.New(reg.ServersService())
+	router.Mount("/server", serverAPI.Router())
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),

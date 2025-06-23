@@ -1,18 +1,41 @@
 package registry
 
 import (
-	"log"
+	"context"
+	"encoding/base64"
+	"net/http"
 	"net/url"
+	"sync"
 )
 
-// ParseAndValidateURL parses and validates the registry URL.
-func ParseAndValidateURL(registry string) *url.URL {
-	host, err := url.Parse(registry)
+type Registry struct {
+	url    *url.URL
+	client *http.Client
+
+	once sync.Once
+	wg   *sync.WaitGroup
+}
+
+func New(wg *sync.WaitGroup, url *url.URL, id string, apiKey string) *Registry {
+	auth := base64.StdEncoding.EncodeToString([]byte(id + ":" + apiKey))
+	rt := &HeaderRoundTripper{
+		Headers: map[string]string{
+			"Authorization": "Basic " + auth,
+		},
+	}
+	client := &http.Client{Transport: rt}
+	return &Registry{
+		wg:     wg,
+		url:    url,
+		client: client,
+	}
+}
+
+func (r *Registry) Ping(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, r.url.String()+"/server", nil)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	if host.Scheme == "" || host.Host == "" {
-		log.Fatalf("Invalid registry URL: %s", registry)
-	}
-	return host
+	_, err = r.client.Do(req)
+	return err
 }

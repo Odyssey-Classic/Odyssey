@@ -10,12 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-)
 
-type Server struct {
-	ID   string `bson:"_id,omitempty"`
-	Name string `bson:"name"`
-}
+	// Use the canonical ServerInfo type from the registry
+	"github.com/FosteredGames/Odyssey/registry/internal/registry/servers"
+)
 
 func main() {
 	uri := os.Getenv("ODY_REG_DB_CONNECTION")
@@ -40,12 +38,12 @@ func main() {
 
 	fmt.Println("Servers:")
 	for cur.Next(ctx) {
-		var server Server
+		var server servers.ServerInfo
 		if err := cur.Decode(&server); err != nil {
 			log.Printf("Failed to decode server: %v", err)
 			continue
 		}
-		fmt.Printf("ID: %v, Name: %v\n", server.ID, server.Name)
+		fmt.Printf("ID: %v, Name: %v, API Key Hash: %v\n", server.ID.Hex(), server.Name, server.Key)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatalf("Cursor error: %v", err)
