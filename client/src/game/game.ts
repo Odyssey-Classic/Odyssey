@@ -3,6 +3,9 @@ import { KeyboardHandler } from '../input';
 import { Character } from '../characters/character';
 import { Direction } from '../characters/direction';
 import { Config } from '../config/config';
+import { MovementInput } from '../input/movement_input';
+import { PlayerController } from "../controllers/player_controller"
+import { AIController } from "../controllers/ai_controller"
 
 /**
  * Game is our root class for handling all game client activities.
@@ -11,30 +14,42 @@ export class Game {
     app: Pixi.Application
     keyboardInput: KeyboardHandler
     player: Character
+    aiCharacter: Character // Add AI-controlled character
+    movementInput: MovementInput
+    aiController: AIController // Add a property for the AI controller
 
     characterLayer: Pixi.Container
 
     constructor() {
         this.app = new Pixi.Application();
         this.keyboardInput = new KeyboardHandler()
+
         this.player = new Character()
+        this.movementInput = new MovementInput(this.player.movement)
+
+        this.aiCharacter = new Character() // Instantiate AI-controlled character
+        this.aiController = new AIController(this.aiCharacter) // Assign AI controller
 
         this.app.stage.addChild(drawGrid())
 
         this.player.position.x = 8
         this.player.position.y = 8
-        this.player.direction = Direction.Right
+        this.player.movement.direction = Direction.Right
 
+        this.aiCharacter.position.x = 5 // Set initial position for AI character
+        this.aiCharacter.position.y = 5
+        this.aiCharacter.movement.direction = Direction.Left
 
         this.characterLayer = new Pixi.Container()
         this.characterLayer.isRenderGroup = true
         this.characterLayer.addChild(this.player.shape)
+        this.characterLayer.addChild(this.aiCharacter.shape) // Add AI character to the layer
         this.app.stage.addChild(this.characterLayer)
-
     }
 
     async start() {
         this.keyboardInput.start()
+        this.movementInput.start()
 
         const width: number = 32 * 17
         const height: number = 32 * 17
@@ -46,45 +61,15 @@ export class Game {
     update(ticker: Pixi.Ticker) {
         let delta = ticker.deltaMS
 
-        let keys = this.keyboardInput.getKeys(true)
-        let moving: boolean = false
-        if (keys.length) {
-            keys.forEach((k) => {
-                console.info("Game Update: ", k)
-                // TODO checking more keys once a single move key is found causes
-                // them to conflict and locks character.
-                // Let's see if anyone notices this in their play tests first.
-                switch (k) {
-                    case 'KeyW':
-                        this.player.startMove(Direction.Up)
-                        moving = true
-                        break
-                    case 'KeyS':
-                        this.player.startMove(Direction.Down)
-                        moving = true
-                        break
-                    case 'KeyA':
-                        this.player.startMove(Direction.Left)
-                        moving = true
-                        break
-                    case 'KeyD':
-                        this.player.startMove(Direction.Right)
-                        moving = true
-                        break
-                }
-            })
-        }
-
+        this.movementInput.update(this.player)
         this.player.update(delta)
-        if (!moving) {
-            this.player.stopMove()
-        }
+        this.aiController.update(delta) // Call the AI controller's update method
     }
 
     valueInput(name: string, value: string) {
         switch (name) {
             case "speed":
-                this.player.speed = parseInt(value)
+                this.player.movement.speed = parseInt(value)
                 break;
         }
     }

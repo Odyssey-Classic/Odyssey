@@ -10,7 +10,10 @@ export default {
             {
                 test: /\.tsx?$/,
                 use: 'ts-loader',
-                exclude: /node_modules/,
+                exclude: [
+                    /node_modules/, // Exclude node_modules
+                    /\.test\.tsx?$/, // Exclude files ending with .test.ts or .test.tsx
+                ]
             },
         ],
     },
